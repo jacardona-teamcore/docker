@@ -1,7 +1,7 @@
 terraform {
   backend "gcs" {
     bucket = "tc-infra-tfstate"
-    prefix = "tc_infra_db_backups_softys_cl"
+    prefix = "tc_infra_db_backups"
   }
 }
 
@@ -16,7 +16,7 @@ data "google_compute_network" "gke-01" {
 }
 
 data "google_compute_subnetwork" "gke-prod-nodes" {
-  name    = "gke-prod-nodes"
+  name    = var.subnetwork
   project = var.project
   region  = var.region
 }
@@ -48,4 +48,5 @@ module "execute" {
   disks = 4
   pg_bouncer_pass = var.pg_bouncer_pass
   service_account = data.google_service_account.db-backup-cloudsql.email
+  private_zone = var.private_zone  
 }

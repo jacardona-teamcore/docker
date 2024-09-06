@@ -47,3 +47,4 @@ variable "disks" {
   default = 3
 }
 variable "service_account" {}
+variable "private_zone" {}

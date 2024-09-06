@@ -16,3 +16,5 @@ variable "destinity_pg_version" {}
 variable "pub_key" {}
 variable "account_id" {}
 variable "pg_bouncer_pass" {}
+variable "subnetwork" {}
+variable "private_zone" {}

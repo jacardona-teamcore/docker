@@ -163,7 +163,7 @@ resource "google_compute_instance" "db" {
 
 data "google_dns_managed_zone" "private_zone" {
   project = var.project
-  name = "private-zone"
+  name = var.private_zone
 }
 
 resource "google_dns_record_set" "dev_pg_dns" {
