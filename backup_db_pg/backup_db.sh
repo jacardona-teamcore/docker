@@ -1,9 +1,10 @@
 #!/bin/bash
 
 DB=$1
-PASS=$2
-SQLCLOUD_CONNECTION=$3
-FOLDER=$4
+USERPG=$2
+PASS=$3
+SQLCLOUD_CONNECTION=$4
+FOLDER=$5
 
 echo "$(date) : started service postgres"
 su postgres -c "/usr/lib/postgresql/16/bin/postgres -c config_file=/etc/postgresql/16/main/postgresql.conf" &>/dev/null &
@@ -20,7 +21,7 @@ echo "$(date) : generate file backup"
 mkdir -p /home/backup
 chown postgres.postgres /home/backup
 cd /home/backup
-su postgres -c "PGPASSWORD=$PASS pg_dump -U postgres -h 127.0.0.1 -p 6432 -j 28 -Fd -Z0 -f $DB.dump $DB"
+su postgres -c "PGPASSWORD=$PASS pg_dump -U $USERPG -h 127.0.0.1 -p 6432 -j 28 -Fd -Z0 -f $DB.dump $DB"
 echo "$(date) : end db backup"
 
 echo "$(date) : started restore"
