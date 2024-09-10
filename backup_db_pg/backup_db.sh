@@ -12,10 +12,10 @@ sleep 5
 
 echo "$(date) : create acces to project"
 gcloud config set 'auth/service_account_use_self_signed_jwt' false
-gcloud auth activate-service-account --key-file /home/config/credentials.json
+gcloud auth activate-service-account --key-file /home/bucket/credentials.json
 
 echo "$(date) : create instance proxy"
-/home/cloud-sql-proxy --address 127.0.0.1 --port 6432 $SQLCLOUD_CONNECTION --credentials-file /home/config/credentials.json &
+/home/cloud-sql-proxy --address 127.0.0.1 --port 6432 $SQLCLOUD_CONNECTION --credentials-file /home/proxy/credentials.json &
 sleep 5
 echo "$(date) : generate file backup"
 mkdir -p /home/backup
