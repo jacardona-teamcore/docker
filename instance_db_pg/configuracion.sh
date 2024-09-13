@@ -1,4 +1,6 @@
 
+VERSION=16
+
 apt update
 apt install -y software-properties-common  wget lsb-release
 apt-get install -y apt-transport-https ca-certificates gnupg curl
