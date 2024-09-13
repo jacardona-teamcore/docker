@@ -1,0 +1,9 @@
+Thu Sep  5 21:41:17 UTC 2024 : started service postgres
+Thu Sep  5 21:41:22 UTC 2024 : create acces to project
+Thu Sep  5 21:41:23 UTC 2024 : create instance proxy
+9788a17cef8354137de5e75fb557e3975e85595b98b4a695e7f6ca888c8f1cd1
+Thu Sep  5 21:42:09 UTC 2024 : generate file backup
+Thu Sep  5 21:42:09 UTC 2024 : end db backup
+Thu Sep  5 21:42:09 UTC 2024 : started restore
+Thu Sep  5 21:42:09 UTC 2024 : end db restoring
+Thu Sep  5 21:42:09 UTC 2024 : generate file backup_base

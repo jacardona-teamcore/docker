@@ -1,10 +1,11 @@
 #!/bin/bash
 
-DB=$1
-USERPG=$2
-PASS=$3
-SQLCLOUD_CONNECTION=$4
-FOLDER=$5
+INSTANCE=$1
+DBS=$2
+USERPG=$3
+PASS=$4
+SQLCLOUD_CONNECTION=$5
+FOLDER=$6
 
 echo "$(date) : started service postgres"
 su postgres -c "/usr/lib/postgresql/16/bin/postgres -c config_file=/etc/postgresql/16/main/postgresql.conf" &>/dev/null &
@@ -21,14 +22,20 @@ echo "$(date) : generate file backup"
 mkdir -p /home/backup
 chown postgres.postgres /home/backup
 cd /home/backup
-su postgres -c "PGPASSWORD=$PASS pg_dump -U $USERPG -h 127.0.0.1 -p 6432 -j 28 -Fd -Z0 -f $DB.dump $DB"
-echo "$(date) : end db backup"
 
-echo "$(date) : started restore"
-su postgres -c "createdb $DB"
-su postgres -c "pg_restore -j 28 -Fd -O -d $DB $DB.dump"
-rm -Rf "$DB.dump"
-echo "$(date) : end db restoring"
+IFS=',' read -ra NAMES <<< $DBS
+for DB in "${NAMES[@]}"; do 
+
+    su postgres -c "PGPASSWORD=$PASS pg_dump -U $USERPG -h 127.0.0.1 -p 6432 -j 28 -Fd -Z0 -f $DB.dump $DB"
+    echo "$(date) : generate backup $DB"
+
+    echo "$(date) : started restore"
+    su postgres -c "createdb $DB"
+    su postgres -c "pg_restore -j 28 -Fd -O -d $DB $DB.dump"
+    echo "$(date) : end db restoring $DB"
+    rm -Rf "$DB.dump"
+done
+echo "$(date) : end db backup and restore"
 
 echo "$(date) : generate file backup_base"
 su postgres -c "mkdir -p /home/backup/latest_backup"
@@ -37,14 +44,13 @@ echo "$(date) : end generate file backup_base"
 cd /home/backup
 
 echo "$(date) : start comprime folder backup_base"
-tar -cf $DB.tar latest_backup/
+tar -cf $INSTANCE.tar latest_backup/
 
 echo "$(date) : start splitting"
-FILETAR="/home/backup/$DB.tar"
+FILETAR="/home/backup/$INSTANCE.tar"
 mkdir split
-mkdir $DB
 cd split
-split --verbose --bytes=5120M /home/backup/$DB.tar "backup."
+split --verbose --bytes=5120M /home/backup/$INSTANCE.tar "backup."
 ls -lh .
 echo "$(date) : end splitting"
 
@@ -54,12 +60,13 @@ for file in /home/backup/split/*; do
 done
 
 cd /home/backup
-mv /home/backup/split/*.lz4 /home/backup/$DB/.
+mkdir $INSTANCE
+mv /home/backup/split/*.lz4 /home/backup/$INSTANCE/.
 echo "$(date) : end lz4"
 rm -rf /home/backup/split/
-rm -f /home/backup/$DB.tar
+rm -f /home/backup/$INSTANCE.tar
 
 echo "$(date) : start send file"
-gsutil -m rm -r $FOLDER/$DB/
-gsutil -m cp -r /home/backup/$DB $FOLDER/
+gsutil -m rm -r $FOLDER/$INSTANCE/
+gsutil -m cp -r /home/backup/$INSTANCE $FOLDER/
 echo "$(date) : end send file"
