@@ -25,8 +25,8 @@ chmod +x cloud-sql-proxy
 su postgres -c "/usr/lib/postgresql/$VERSION/bin/postgres -c config_file=/etc/postgresql/$VERSION/main/postgresql.conf" &>/dev/null &
 sleep 15
 
-rm -f /home/configurtions/postgresql.conf
+rm -f /home/configurations/postgresql.conf
 cp /etc/postgresql/$VERSION/main/postgresql.conf /home/configurations/postgresql.conf
 
 rm -f /etc/postgresql/$VERSION/main/pg_hba.conf
-cp /home/configurtions/pg_hba.conf /etc/postgresql/$VERSION/main/pg_hba.conf
+cp /home/configurations/pg_hba.conf /etc/postgresql/$VERSION/main/pg_hba.conf
