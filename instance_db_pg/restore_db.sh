@@ -7,6 +7,8 @@ VERSION=16
 
 rm -rf $FOLDERRESTORE
 
+pkill -u postgres
+
 echo "$(date) : download files of bucket"
 mkdir -p $FOLDERRESTORE
 gcloud storage cp $BUCKET $FOLDERRESTORE --recursive
@@ -45,7 +47,8 @@ cp pg_hba.conf /etc/postgresql/$VERSION/main/
 chown -R postgres.postgres /etc/postgresql/$VERSION/main/
 
 echo "$(date) : start postgres"
-systemctl start postgresql
+su postgres -c "/usr/lib/postgresql/$VERSION/bin/postgres -c config_file=/etc/postgresql/$VERSION/main/postgresql.conf" &>/dev/null &
+sleep 10
 
 rm -rf $FOLDERRESTORE
 rm -f /home/access/credentials.json

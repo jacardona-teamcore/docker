@@ -1,4 +1,6 @@
 #!/bin/bash
+VERSION=16
 
 echo "$(date) : started service postgres"
-systemctl start postgresql
+su postgres -c "/usr/lib/postgresql/$VERSION/bin/postgres -c config_file=/etc/postgresql/$VERSION/main/postgresql.conf" &>/dev/null &
+sleep 5

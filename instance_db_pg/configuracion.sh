@@ -22,11 +22,11 @@ cd /home
 curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.13.0/cloud-sql-proxy.linux.amd64
 chmod +x cloud-sql-proxy
 
-systemctl start postgresql
+su postgres -c "/usr/lib/postgresql/$VERSION/bin/postgres -c config_file=/etc/postgresql/$VERSION/main/postgresql.conf" &>/dev/null &
 sleep 15
 
 rm -f /home/configurtions/postgresql.conf
-cp /etc/postgresql/$VERSION/main/postgresql.conf /home/configurtions/postgresql.conf
+cp /etc/postgresql/$VERSION/main/postgresql.conf /home/configurations/postgresql.conf
 
 rm -f /etc/postgresql/$VERSION/main/pg_hba.conf
 cp /home/configurtions/pg_hba.conf /etc/postgresql/$VERSION/main/pg_hba.conf
