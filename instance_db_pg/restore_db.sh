@@ -44,7 +44,7 @@ rm -f /etc/postgresql/$VERSION/main/pg_hba.conf
 cp postgresql.conf /etc/postgresql/$VERSION/main/
 cp pg_hba.conf /etc/postgresql/$VERSION/main/
 
-chown -R postgres.postgres /etc/postgresql/$VERSION/main/
+chown -R postgres:postgres /etc/postgresql/$VERSION/main/
 
 echo "$(date) : start postgres"
 su postgres -c "/usr/lib/postgresql/$VERSION/bin/postgres -c config_file=/etc/postgresql/$VERSION/main/postgresql.conf" &>/dev/null &

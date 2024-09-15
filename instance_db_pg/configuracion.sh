@@ -31,3 +31,4 @@ cp /etc/postgresql/$VERSION/main/postgresql.conf /home/configurations/postgresql
 
 rm -f /etc/postgresql/$VERSION/main/pg_hba.conf
 cp /home/configurations/pg_hba.conf /etc/postgresql/$VERSION/main/pg_hba.conf
+chown postgres:postgres /etc/postgresql/$VERSION/main/*.*
