@@ -10,6 +10,7 @@ apt install -y zip
 apt install -y pip
 apt install -y liblz4-tool
 apt install -y pigz
+apt install -y supervisor
 mkdir -p /etc/apt/keyrings
 ufw allow 5432
 apt install -y postgresql postgresql-contrib postgresql-client
