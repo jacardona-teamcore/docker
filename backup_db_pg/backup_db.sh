@@ -32,12 +32,12 @@ cd /home/backup
 
 IFS=',' read -ra NAMES <<< $DBS
 for DB in "${NAMES[@]}"; do 
-    su postgres -c "PGPASSWORD=$PASS pg_dump -U $USERPG -h 127.0.0.1 -p 6432 -j 28 -F d -Z 0 -f $DB.dump $DB"
+    su postgres -c "PGPASSWORD=$PASS pg_dump -U $USERPG -h 127.0.0.1 -p 6432 -j 4 -F d -Z 0 -f $DB.dump $DB"
     echo "$(date) : generate backup $DB"
 
     echo "$(date) : started restore"
     su postgres -c "createdb $DB"
-    su postgres -c "pg_restore -j 28 -F d -O -d $DB $DB.dump"
+    su postgres -c "pg_restore -j 4 -F d -O -d $DB $DB.dump"
     echo "$(date) : end db restoring $DB"
     rm -Rf "$DB.dump"
 done
