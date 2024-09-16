@@ -7,9 +7,16 @@ PASS=$4
 SQLCLOUD_CONNECTION=$5
 FOLDER=$6
 
+sudo NEEDRESTART_MODE=a apt install -y postgresql postgresql-contrib postgresql-client
+sudo systemctl stop postgresql
+sleep 10
+
+rm -f /etc/postgresql/16/main/postgresql.conf
+cp /home/postgresql.conf /etc/postgresql/16/main/postgresql.conf
+
 echo "$(date) : started service postgres"
 su postgres -c "/usr/lib/postgresql/16/bin/postgres -c config_file=/etc/postgresql/16/main/postgresql.conf" &>/dev/null &
-sleep 5
+sleep 10
 
 echo "$(date) : create acces to project"
 gcloud config set 'auth/service_account_use_self_signed_jwt' false
@@ -25,12 +32,12 @@ cd /home/backup
 
 IFS=',' read -ra NAMES <<< $DBS
 for DB in "${NAMES[@]}"; do 
-    su postgres -c "PGPASSWORD=$PASS pg_dump -U $USERPG -h 127.0.0.1 -p 6432 -j 28 -Fd -Z0 -f $DB.dump $DB"
+    su postgres -c "PGPASSWORD=$PASS pg_dump -U $USERPG -h 127.0.0.1 -p 6432 -j 28 -F d -Z 0 -f $DB.dump $DB"
     echo "$(date) : generate backup $DB"
 
     echo "$(date) : started restore"
     su postgres -c "createdb $DB"
-    su postgres -c "pg_restore -j 28 -Fd -O -d $DB $DB.dump"
+    su postgres -c "pg_restore -j 28 -F d -O -d $DB $DB.dump"
     echo "$(date) : end db restoring $DB"
     rm -Rf "$DB.dump"
 done
