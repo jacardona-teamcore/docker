@@ -7,8 +7,8 @@ PASS=$4
 SQLCLOUD_CONNECTION=$5
 FOLDER=$6
 
-sudo NEEDRESTART_MODE=a apt install -y postgresql postgresql-contrib postgresql-client
-sudo systemctl stop postgresql
+apt install -y postgresql postgresql-contrib postgresql-client
+systemctl stop postgresql
 sleep 10
 
 rm -f /etc/postgresql/16/main/postgresql.conf
