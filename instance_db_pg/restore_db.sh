@@ -1,8 +1,7 @@
-#!/bin/bash
 
 DB=$1
 BUCKET=$2
-FOLDERRESTORE=/home/restore
+FOLDERRESTORE=/tmp/restore
 VERSION=16
 
 rm -rf $FOLDERRESTORE

@@ -25,7 +25,6 @@ cd /home/backup
 
 IFS=',' read -ra NAMES <<< $DBS
 for DB in "${NAMES[@]}"; do 
-
     su postgres -c "PGPASSWORD=$PASS pg_dump -U $USERPG -h 127.0.0.1 -p 6432 -j 28 -Fd -Z0 -f $DB.dump $DB"
     echo "$(date) : generate backup $DB"
 
