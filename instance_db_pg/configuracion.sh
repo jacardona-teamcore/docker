@@ -9,7 +9,7 @@ sudo snap install google-cloud-cli --classic
 sudo NEEDRESTART_MODE=a apt install -y zip
 sudo NEEDRESTART_MODE=a apt install -y pip
 sudo NEEDRESTART_MODE=a apt install -y liblz4-tool
-sudo NEEDRESTART_MODE=a apt install -y pigz
+sudo NEEDRESTART_MODE=a apt install -y pigz openssh-client bash
 
 sudo ufw allow 5432
 sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
