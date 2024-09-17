@@ -1,34 +1,27 @@
+sudo NEEDRESTART_MODE=a apt update
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates gnupg curl
+sudo apt-get install -y software-properties-common
+sudo NEEDRESTART_MODE=a apt install -y gnupg2 wget nano
+sudo NEEDRESTART_MODE=a apt install -y software-properties-common lsb-release
+sudo NEEDRESTART_MODE=a apt install -y git
+sudo snap install google-cloud-cli --classic
+sudo NEEDRESTART_MODE=a apt install -y zip
+sudo NEEDRESTART_MODE=a apt install -y pip
+sudo NEEDRESTART_MODE=a apt install -y liblz4-tool
+sudo NEEDRESTART_MODE=a apt install -y pigz
 
-VERSION=16
+sudo ufw allow 5432
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
 
-apt update
-apt install -y software-properties-common  wget lsb-release
-apt-get install -y apt-transport-https ca-certificates gnupg curl
-apt install -y git
-snap install google-cloud-cli --classic
-apt install -y zip
-apt install -y pip
-apt install -y liblz4-tool
-apt install -y pigz
-apt install -y supervisor
-mkdir -p /etc/apt/keyrings
-ufw allow 5432
-apt install -y postgresql postgresql-contrib postgresql-client
+sudo curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+sudo echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+sudo apt-get update 
+sudo apt-get install -y google-cloud-cli
 
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-apt-get update && apt-get install -y google-cloud-cli
+sudo wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
 
-cd /home
-curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.13.0/cloud-sql-proxy.linux.amd64
-chmod +x cloud-sql-proxy
-
-su postgres -c "/usr/lib/postgresql/$VERSION/bin/postgres -c config_file=/etc/postgresql/$VERSION/main/postgresql.conf" &>/dev/null &
-sleep 15
-
-rm -f /home/configurations/postgresql.conf
-cp /etc/postgresql/$VERSION/main/postgresql.conf /home/configurations/postgresql.conf
-
-rm -f /etc/postgresql/$VERSION/main/pg_hba.conf
-cp /home/configurations/pg_hba.conf /etc/postgresql/$VERSION/main/pg_hba.conf
-chown postgres:postgres /etc/postgresql/$VERSION/main/*.*
+sudo echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo NEEDRESTART_MODE=a update
+sudo apt-get install terraform
