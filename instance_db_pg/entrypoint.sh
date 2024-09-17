@@ -1,5 +1,4 @@
 #!/bin/sh
-sleep 3600
 echo "setting keys ..."
 eval "$(ssh-agent -s)"
 ssh-add /app/.ssh/id_rsa
@@ -12,20 +11,20 @@ rm -f $FOLDERTERRAFORM/terraform.tfvars
 rm -f $FOLDERTERRAFORM/backend.config
 
 echo "$(date) : file terraform.tfvars"
-IFS=';' read -ra LINES <<< $VARIABLES
-for LINE in "${LINES[@]}"; do
+for LINE in $(echo "$VARIABLES" | tr ';' '\n'); do
     echo "$(date) : $LINE"
     echo $LINE >> $FOLDERTERRAFORM/terraform.tfvars
 done
 
 echo "$(date) : file backend.config"
-echo 'bucket="$BUCKET_STATUS"' > $FOLDERTERRAFORM/backend.config
-
-gsutil rm gs://$BUCKET_STATUS/tc_arch360_restore/default.tfstate
+val1='bucket="'
+val2='"'
+complete="$val1$BUCKET_STATUS$val2"
+echo "$complete" > $FOLDERTERRAFORM/backend.config
 
 cd $FOLDERTERRAFORM
 echo "$(date) : terraform init"
-terraform init -backend-config="$FOLDERTERRAFORM/backend.config"
+terraform init -reconfigure -backend-config="$FOLDERTERRAFORM/backend.config"
 echo "$(date) : terraform plan"
 terraform plan -var-file="$FOLDERTERRAFORM/terraform.tfvars"
 echo "$(date) : terraform apply"
