@@ -1,6 +1,5 @@
-
 FILE=$1
-VERSION=16
+VERSION=$2
 
 systemctl stop postgresql
 sleep 5

@@ -1,14 +1,16 @@
-FROM ubuntu:latest
+FROM hashicorp/terraform:latest
+RUN mkdir -p /app/.ssh
+WORKDIR /app
 
-ADD ./configuracion.sh /root/configuracion.sh
-ADD ./configuration_db.sh /home/configuration_db.sh
-ADD ./restore_db.sh /home/restore_db.sh
-ADD ./start_db.sh /home/start_db.sh
-ADD ./configurations /home/configurations
+RUN apk add --no-cache curl openssh-client bash
+RUN eval "$(ssh-agent -s)"
+RUN ssh-keygen -q -t rsa -N '' -f /app/.ssh/id_rsa
 
+ADD ./terraform /app/terraform/
 
 EXPOSE 80 5432 6432
 
-RUN bash /root/configuracion.sh
+ADD entrypoint.sh /root/entrypoint.sh
+RUN chmod +x /root/entrypoint.sh
 
-ENTRYPOINT ["/home/start_db.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
