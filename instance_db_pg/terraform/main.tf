@@ -1,7 +1,6 @@
 terraform {
   backend "gcs" {
-    bucket = "example_test_db"
-    prefix = "tc_local_jac"
+    prefix = "tc_arch360_restore"
   }
   required_providers {
     google = {
