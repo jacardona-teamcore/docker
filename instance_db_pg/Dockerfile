@@ -10,7 +10,7 @@ ADD ./terraform /app/terraform/
 
 EXPOSE 80 5432 6432
 
-ADD entrypoint.sh /root/entrypoint.sh
-RUN chmod +x /root/entrypoint.sh
+ADD entrypoint.sh /home/entrypoint.sh
+RUN chmod +x /home/entrypoint.sh
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/home/entrypoint.sh"]
