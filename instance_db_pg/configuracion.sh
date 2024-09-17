@@ -23,5 +23,5 @@ apt-get install -y google-cloud-cli
 wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
 
 echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
-NEEDRESTART_MODE=a update
+NEEDRESTART_MODE=a apt update
 apt-get install terraform
