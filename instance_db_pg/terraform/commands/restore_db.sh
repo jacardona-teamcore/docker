@@ -16,7 +16,7 @@ gcloud storage cp $BUCKET/$DB $FOLDERRESTORE --recursive
 echo "$(date) : start descompress lz4"
 for file in $(find "$FOLDERRESTORE/$DB" -name "*.lz4"); do
   echo "Descompress : $file"
-  lz4 -d "$file" 
+  /usr/bin/lz4 -d "$file" 
 done
 
 echo "$(date) : create folder lz4"
