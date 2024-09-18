@@ -1,5 +1,5 @@
 #!/bin/sh
-sleep 3600
+
 echo "setting keys ..."
 eval "$(ssh-agent -s)"
 ssh-add /app/.ssh/id_rsa
