@@ -33,3 +33,5 @@ echo "$(date) : terraform plan"
 terraform plan -var-file="$FOLDERTERRAFORM/terraform.tfvars"
 echo "$(date) : terraform apply"
 terraform apply -var-file="$FOLDERTERRAFORM/terraform.tfvars" -auto-approve
+
+sleep 3600
