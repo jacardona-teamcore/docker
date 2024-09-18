@@ -22,6 +22,9 @@ val2='"'
 complete="$val1$BUCKET_STATUS$val2"
 echo "$complete" > $FOLDERTERRAFORM/backend.config
 
+echo "$(date) : service account"
+gcloud auth list
+
 cd $FOLDERTERRAFORM
 echo "$(date) : terraform init"
 terraform init -reconfigure -backend-config="$FOLDERTERRAFORM/backend.config"
