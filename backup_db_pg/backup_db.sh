@@ -24,7 +24,7 @@ gcloud auth activate-service-account --key-file /home/bucket/credentials.json
 
 echo "$(date) : create instance proxy"
 /home/cloud-sql-proxy --address 127.0.0.1 --port 6432 $SQLCLOUD_CONNECTION --credentials-file /home/proxy/credentials.json &
-sleep 5
+sleep 20
 echo "$(date) : generate file backup"
 mkdir -p /home/backup
 chown postgres.postgres /home/backup

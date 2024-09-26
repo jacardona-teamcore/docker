@@ -124,7 +124,8 @@ resource "google_compute_instance" "db" {
       "gcloud auth activate-service-account --key-file ${var.folder_user}/sa.json",
       "gcloud config set project ${var.project} --quiet",
       "bash ${var.folder_user}/restore_db.sh ${var.version_pg} ${var.db_name} ${var.folder_user} ${var.bucket}",
-      "sleep 20"
+      "sleep 20",
+      "rm -f ${var.folder_user}/sa.json"
     ]
   }
 }
