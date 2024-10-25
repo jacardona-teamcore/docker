@@ -1,0 +1,1 @@
+select * from fnc_copy_table_info_redshift();
