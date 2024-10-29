@@ -24,15 +24,17 @@ KEY="/home/key"
 FILELOG=${DB}_${DATETIME}
 chmod 0400 $KEY
 
-echo "$(date) : Start configuration postgres" > ${FOLDER_POSTGRES}/${FILELOG}.log
+rm -rf $FOLDER_POSTGRES
+mkdir -p $FOLDER_POSTGRES
+echo "$(date) : Install postgres service" > ${FOLDER_POSTGRES}/${FILELOG}.log
 
-echo "$(date) : Install postgres service" >> ${FOLDER_POSTGRES}/${FILELOG}.log
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 rm -f /etc/apt/trusted.gpg.d/postgresql.gpg
 curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
 apt install -y postgresql-16 postgresql-contrib-16
 systemctl stop postgresql
 
+echo "$(date) : Exists databases in alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
 export PGPASSWORD=$ALLOYDB_PASSWORD
 psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -lqt | cut -d \| -f 1 | grep "${DB} " | wc -l > ${FOLDER_POSTGRES}/database.count
 COUNT=$(cat ${FOLDER_POSTGRES}/database.count);
@@ -43,8 +45,6 @@ else
 
     echo "$(date) : Start configuration postgres" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     # Copy configuration file and access to postgres user
-    rm -f $FOLDER_POSTGRES
-    mkdir -p $FOLDER_POSTGRES
     mkdir -p $FOLDER_POSTGRES/download
     mkdir -p $FOLDER_BACKUP
     mkdir -p $FOLDER_POSTGRES/gz
