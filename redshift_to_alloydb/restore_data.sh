@@ -33,11 +33,12 @@ curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearm
 apt install -y postgresql-16 postgresql-contrib-16
 systemctl stop postgresql
 
-sudo su postgres -c "psql -h localhost -U postgres -d postgres -c \"SELECT count(1) FROM pg_database WHERE datname='{$DB}'\" -o ${FOLDER_POSTGRES}/database.count"
+export PGPASSWORD=$ALLOYDB_PASSWORD
+psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -lqt | cut -d \| -f 1 | grep "${DB} " | wc -l > ${FOLDER_POSTGRES}/database.count
 COUNT=$(cat ${FOLDER_POSTGRES}/database.count);
 
 if [ "$COUNT" -eq 1 ]; then
-    echo "$(date) : La ${DB} existe en AlloyDB no se ejecute el proceso " >> ${FOLDER_POSTGRES}/${FILELOG}.log
+    echo "$(date) : La ${DB} existe en AlloyDB no se ejecuto el proceso " >> ${FOLDER_POSTGRES}/${FILELOG}.log
 else
 
     echo "$(date) : Start configuration postgres" >> ${FOLDER_POSTGRES}/${FILELOG}.log
