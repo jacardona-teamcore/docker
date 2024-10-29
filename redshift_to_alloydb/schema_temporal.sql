@@ -84,7 +84,7 @@ BEGIN
 	OPEN cursor_columnas;
     FETCH cursor_columnas INTO registro;
     WHILE found LOOP 
-		v_tabla_ddl =  v_tabla_ddl || ',' || registro.column_name || ' ' || registro.data_type;
+		v_tabla_ddl =  v_tabla_ddl || ',' || registro.column_name ;
 
         FETCH cursor_columnas INTO registro;
     END LOOP; 
@@ -194,9 +194,9 @@ BEGIN
 	v_index = 0;
     v_return = '(';
 
-	select count(1) into v_count from temporal.tables_load;
+	select count(1) into v_count from temporal.tables_load a where a.estado = 'PENDIENTE';
 
-	WHILE v_index <= v_count LOOP
+	WHILE v_index < v_count LOOP
 		-- consultar tabla a extraer datos
 		select id, esquema, tabla
 		into registro
