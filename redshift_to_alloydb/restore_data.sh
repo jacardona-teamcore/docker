@@ -30,7 +30,6 @@ chmod 0400 $KEY
 ls -lh /home/
 ls -lh /home/aws
 ls -lh /home/vpn
-sleep 60
 
 rm -rf $FOLDER_POSTGRES
 mkdir -p $FOLDER_POSTGRES
@@ -89,6 +88,7 @@ else
     # SO Know of hosts access remoto by user Postgres and root
     echo "$(date) : settings access" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     chown -R postgres.postgres $FOLDER_POSTGRES
+    chown -R postgres:postgres $FOLDER_POSTGRES
     mkdir -p /var/lib/postgresql/.aws/
     cp -f /home/aws/credentials /var/lib/postgresql/.aws/credentials
     chown -R postgres.postgres /var/lib/postgresql/
