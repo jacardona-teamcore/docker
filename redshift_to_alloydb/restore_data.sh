@@ -24,6 +24,11 @@ KEY="/home/vpn/key"
 FILELOG=${DB}_${DATETIME}
 chmod 0400 $KEY
 
+ls -lh /home/
+ls -lh /home/aws
+ls -lh /home/vpn
+sleep 120
+
 rm -rf $FOLDER_POSTGRES
 mkdir -p $FOLDER_POSTGRES
 echo "$(date) : Install postgres service" > ${FOLDER_POSTGRES}/${FILELOG}.log
