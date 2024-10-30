@@ -20,7 +20,7 @@ FOLDER_REMOTO="/home/ubuntu"
 FOLDER_POSTGRES="/home/postgres"
 FOLDER_BACKUP="$FOLDER_POSTGRES/backup"
 USERREMOTO="ubuntu"
-KEY="/home/key"
+KEY="/home/vpn/key"
 FILELOG=${DB}_${DATETIME}
 chmod 0400 $KEY
 
@@ -30,9 +30,8 @@ echo "$(date) : Install postgres service" > ${FOLDER_POSTGRES}/${FILELOG}.log
 
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 rm -f /etc/apt/trusted.gpg.d/postgresql.gpg
-curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
 apt install -y postgresql-16 postgresql-contrib-16
-systemctl stop postgresql
 
 echo "$(date) : Exists databases in alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
 export PGPASSWORD=$ALLOYDB_PASSWORD
@@ -83,7 +82,7 @@ else
     echo "$(date) : settings access" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     chown -R postgres.postgres $FOLDER_POSTGRES
     mkdir -p /var/lib/postgresql/.aws/
-    cp -f /home/credentials /var/lib/postgresql/.aws/credentials
+    cp -f /home/aws/credentials /var/lib/postgresql/.aws/credentials
     chown -R postgres.postgres /var/lib/postgresql/
     chown -R postgres:postgres /var/lib/postgresql/
     chmod 600 /var/lib/postgresql/.aws/credentials
