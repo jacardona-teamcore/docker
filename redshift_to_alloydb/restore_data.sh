@@ -22,12 +22,15 @@ FOLDER_BACKUP="$FOLDER_POSTGRES/backup"
 USERREMOTO="ubuntu"
 KEY="/home/vpn/key"
 FILELOG=${DB}_${DATETIME}
+
+cp $KEY /home/.
+KEY="/home/key"
 chmod 0400 $KEY
 
 ls -lh /home/
 ls -lh /home/aws
 ls -lh /home/vpn
-sleep 120
+sleep 60
 
 rm -rf $FOLDER_POSTGRES
 mkdir -p $FOLDER_POSTGRES
