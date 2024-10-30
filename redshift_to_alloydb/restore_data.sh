@@ -131,3 +131,5 @@ else
 fi
 
 echo "$(date) : end process restore" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+
+sleep 120
