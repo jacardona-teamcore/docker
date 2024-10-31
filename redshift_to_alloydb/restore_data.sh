@@ -13,6 +13,7 @@ S3_BUCKET_BASE=${10}
 GCS_BUCKET=${11}
 IAM_ROLE=${12}
 INSTANCEVPN=${13}
+MAX=${14}
 
 DATETIME=$(date +"%Y%m%d%H%M%S")
 FILEPARAMETERS="${DB}_${DATETIME}"
@@ -116,7 +117,7 @@ else
     sed -i "s/AS '-1:-1', /AS /g" $FOLDER_BACKUP/$DB.sql
     sed -i "s/CREATE MATERIALIZED VIEW/; CREATE VIEW/g" $FOLDER_BACKUP/$DB.sql
 
-    gsutil cp ${FOLDER_BACKUP}/${DB}.sql ${GCS_BUCKET}/${DB}/${DB}.sql
+    gsutil cp ${FOLDER_BACKUP}/${DB}.sql ${GCS_BUCKET}/${DB}/${DATETIME}/${DB}.sql
     echo "$(date) : create database local" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "createdb -h localhost -p 5432 -U postgres $DB"
     su postgres -c "psql -h localhost -p 5432 -U postgres $DB < ${FOLDER_BACKUP}/${DB}.sql"
@@ -124,7 +125,7 @@ else
     echo "$(date) : create backup local" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "pg_dump -U postgres -h localhost -p 5432  --format=plain -s -f $FOLDER_BACKUP/${DB}_local.sql $DB"
 
-    gsutil cp ${FOLDER_BACKUP}/${DB}_local.sql ${GCS_BUCKET}/${DB}/${DB}_local.sql
+    gsutil cp ${FOLDER_BACKUP}/${DB}_local.sql ${GCS_BUCKET}/${DB}/${DATETIME}/${DB}_local.sql
 
     echo "$(date) : create schema temporal local" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "psql -h localhost -p 5432 -U postgres $DB < $FOLDER_POSTGRES/schema_temporal.sql"
@@ -142,25 +143,35 @@ else
     COMMAND="psql -h localhost -p 5432 -U postgres -tAc "
     SQL="SELECT COUNT(1) FROM temporal.tables_load WHERE estado="
     COUNT=$(su postgres -c "$COMMAND \"${SQL}'PENDIENTE'\" ${DB}")
+    NEXT=1
 
     if [ "$COUNT" -gt 0 ]; then
         while [ $COUNT -gt 0 ]; do
             COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
-
-            if [ "$COUNT" -eq 0 ]; then
-                $FOLDER_POSTGRES/restore_cycle_tables.sh "${DB}1" "${FOLDER_POSTGRES}" &
-                sleep 2
+            
+            if [ "$COUNT" -eq 3 ]; then
+                sleep 10
+                COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
             fi
 
-            if [ 1 -ge "$COUNT" ]; then
-                $FOLDER_POSTGRES/restore_cycle_tables.sh "${DB}2" "${FOLDER_POSTGRES}" &
-                sleep 2
-            fi
-
-            $FOLDER_POSTGRES/restore_cycle_tables.sh "${DB}3" "${FOLDER_POSTGRES}"
+            while [ $COUNT -lt $MAX ]
+            do
+                $FOLDER_POSTGRES/restore_cycle_tables.sh "${DB}${COUNT}" "${FOLDER_POSTGRES}" &
+                sleep 1
+                COUNT=$((COUNT + NEXT))
+            done
 
             COUNT=$(su postgres -c "$COMMAND \"${SQL}'PENDIENTE'\" ${DB}")
         done
+
+        echo "$(date) : end validate load" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+        COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
+        if [ "$COUNT" -gt 0 ]; then
+            while [ $COUNT -gt 0 ]; do
+                sleep 60
+                COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
+            done
+        fi
     fi
     
     ssh -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN "rm -f $FOLDER_REMOTO/$FILEPARAMETERS.sh"
@@ -168,11 +179,11 @@ else
     echo "$(date) : consult status tables" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "psql -h localhost -p 5432 -U postgres -c \"\\copy (select * from temporal.tables_load) TO '${FOLDER_POSTGRES}/${FILELOG}.tables' WITH CSV HEADER;\" $DB"
 
-    gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.log ${GCS_BUCKET}/${DB}/${FILELOG}.log
+    gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.log ${GCS_BUCKET}/${DB}/${DATETIME}/${FILELOG}.log
 
 fi
 
 echo "$(date) : end process restore" >> ${FOLDER_POSTGRES}/${FILELOG}.log
-gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.tables ${GCS_BUCKET}/${DB}/${FILELOG}.tables
+gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.tables ${GCS_BUCKET}/${DB}/${DATETIME}/${FILELOG}.tables
 
 sleep 300
