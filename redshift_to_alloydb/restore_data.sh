@@ -99,6 +99,7 @@ else
     cp -f /home/pg_hba.conf /etc/postgresql/16/main/pg_hba.conf
     cp -f /home/postgresql.conf /etc/postgresql/16/main/postgresql.conf
     chown -R postgres.postgres /etc/postgresql/16/main/*
+    chown -R postgres:postgres /etc/postgresql/16/main/*
     su postgres -c "/usr/lib/postgresql/16/bin/postgres -c config_file=/etc/postgresql/16/main/postgresql.conf &>/dev/null &"
     sleep 10
 
