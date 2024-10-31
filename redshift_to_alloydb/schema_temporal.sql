@@ -219,14 +219,6 @@ BEGIN
 			v_estado = 'ERROR';
 		END;
 
-		insert into temporal.logs_migration 
-		select 
-			registro.esquema,
-			registro.tabla,
-			respuesta
-		from 
-			tmp_record ;
-
 		update temporal.tables_load set 
 			estado = v_estado
 		where 
