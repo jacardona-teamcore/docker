@@ -175,7 +175,9 @@ END;
 $BODY$
 LANGUAGE 'plpgsql' COST 100.0 SECURITY INVOKER;
 
-CREATE OR REPLACE function fnc_copy_table_info_redshift()
+drop function if exists fnc_copy_table_info_redshift();
+
+CREATE OR REPLACE function fnc_copy_table_info_redshift(p_id integer, p_folder varchar)
   RETURNS text AS
 $BODY$
 DECLARE
@@ -192,50 +194,49 @@ DECLARE
 
 BEGIN
 	v_index = 0;
-    v_return = '(';
 
-	select count(1) into v_count from temporal.tables_load a where a.estado = 'PENDIENTE';
-
-	WHILE v_index < v_count LOOP
-		-- consultar tabla a extraer datos
+	-- consultar tabla a extraer datos
+	if p_id = 0 then
+		v_return = 'NOTHING';
+	else
 		select id, esquema, tabla
 		into registro
-		from fnc_get_load_table();
-
-		drop table if exists temporal.tmp_record;
-		CREATE unlogged TABLE temporal.tmp_record  (
+		from temporal.tables_load
+		where id = p_id;
+	
+		drop table if exists tmp_record;
+		CREATE temp TABLE tmp_record  (
 			respuesta VARCHAR
 		);
-
+	
 		v_estado = 'CARGADA';
-        v_columns = generate_ddl_columns_table(registro.esquema, registro.tabla);
-		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" ';
-		v_sql = 'COPY temporal.tmp_record FROM PROGRAM ''' || v_comando || '''';
-				
+	    v_columns = generate_ddl_columns_table(registro.esquema, registro.tabla);
+		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" '|| p_folder;
+		v_sql = 'COPY tmp_record FROM PROGRAM ''' || v_comando || '''';
+					
 		BEGIN
 			raise notice 'sql: %', v_sql;
 			execute v_sql;
 		EXCEPTION WHEN OTHERS THEN
 			v_estado = 'ERROR';
 		END;
-
+	
 		update temporal.tables_load set 
 			estado = v_estado
 		where 
 			id = registro.id;
-
-	    v_index = v_index + 1;
-  	END LOOP;
-
-	v_return = 'OK';
+	
+		v_return = 'OK';
+	end if;
 
     RETURN v_return;
 END;
 $BODY$
 LANGUAGE 'plpgsql' COST 100.0 SECURITY INVOKER;
 
+drop function if exists fnc_get_load_table();
 CREATE OR REPLACE function fnc_get_load_table()
-  RETURNS SETOF  type_get_load_table AS
+  RETURNS SETOF integer AS
 $BODY$
 DECLARE
 
@@ -244,7 +245,7 @@ DECLARE
 	v_sql varchar;
 	v_count  integer;
 	v_index integer;
-	v_return type_get_load_table;
+	v_return integer;
 
 	cursor_tablas cursor is
     SELECT 
@@ -258,6 +259,8 @@ DECLARE
 	order by foraneas asc;
 
 begin
+
+	v_return = 0;
 	
 	OPEN cursor_tablas;
     FETCH cursor_tablas INTO registro;
@@ -272,14 +275,22 @@ begin
 			b.id_foranea = a.id ;
 	
 		if v_count = 0 then
-			v_return = registro;
-			return next v_return;
+			v_return = registro.id;
+
+			update temporal.tables_load set 
+				estado = 'PROCESANDO'
+			where 
+				id = registro.id;
+
+			
 			EXIT;
 		end if;
 
 		FETCH cursor_tablas INTO registro;
     END LOOP;
     CLOSE cursor_tablas;
+
+	return next v_return;
 
 END;
 $BODY$

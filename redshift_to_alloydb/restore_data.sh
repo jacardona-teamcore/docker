@@ -116,12 +116,15 @@ else
     sed -i "s/AS '-1:-1', /AS /g" $FOLDER_BACKUP/$DB.sql
     sed -i "s/CREATE MATERIALIZED VIEW/; CREATE VIEW/g" $FOLDER_BACKUP/$DB.sql
 
+    gsutil cp ${FOLDER_BACKUP}/${DB}.sql ${GCS_BUCKET}/${DB}/${DB}.sql
     echo "$(date) : create database local" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "createdb -h localhost -p 5432 -U postgres $DB"
     su postgres -c "psql -h localhost -p 5432 -U postgres $DB < ${FOLDER_BACKUP}/${DB}.sql"
 
     echo "$(date) : create backup local" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "pg_dump -U postgres -h localhost -p 5432  --format=plain -s -f $FOLDER_BACKUP/${DB}_local.sql $DB"
+
+    gsutil cp ${FOLDER_BACKUP}/${DB}_local.sql ${GCS_BUCKET}/${DB}/${DB}_local.sql
 
     echo "$(date) : create schema temporal local" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "psql -h localhost -p 5432 -U postgres $DB < $FOLDER_POSTGRES/schema_temporal.sql"
@@ -136,15 +139,40 @@ else
     echo "$(date) : restore data redshift to alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "psql -h localhost -p 5432 -U postgres $DB < $FOLDER_POSTGRES/restore_redshift_to_alloydb.sql"
 
+    COMMAND="psql -h localhost -p 5432 -U postgres -tAc "
+    SQL="SELECT COUNT(1) FROM temporal.tables_load WHERE estado="
+    COUNT=$(su postgres -c "$COMMAND \"${SQL}'PENDIENTE'\" ${DB}")
+
+    if [ "$COUNT" -gt 0 ]; then
+        while [ $COUNT -gt 0 ]; do
+            COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
+
+            if [ "$COUNT" -eq 0 ]; then
+                $FOLDER_POSTGRES/restore_cycle_tables.sh "${DB}1" "${FOLDER_POSTGRES}" &
+                sleep 2
+            fi
+
+            if [ 1 -ge "$COUNT" ]; then
+                $FOLDER_POSTGRES/restore_cycle_tables.sh "${DB}2" "${FOLDER_POSTGRES}" &
+                sleep 2
+            fi
+
+            $FOLDER_POSTGRES/restore_cycle_tables.sh "${DB}3" "${FOLDER_POSTGRES}"
+
+            COUNT=$(su postgres -c "$COMMAND \"${SQL}'PENDIENTE'\" ${DB}")
+        done
+    fi
+    
     ssh -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN "rm -f $FOLDER_REMOTO/$FILEPARAMETERS.sh"
+
+    echo "$(date) : consult status tables" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+    su postgres -c "psql -h localhost -p 5432 -U postgres -c \"\\copy (select * from temporal.tables_load) TO '${FOLDER_POSTGRES}/${FILELOG}.tables' WITH CSV HEADER;\" $DB"
+
+    gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.log ${GCS_BUCKET}/${DB}/${FILELOG}.log
 
 fi
 
 echo "$(date) : end process restore" >> ${FOLDER_POSTGRES}/${FILELOG}.log
-
-su postgres -c "psql -h localhost -p 5432 -U postgres -c \"\\copy (select * from temporal.tables_load) TO '${FOLDER_POSTGRES}/${FILELOG}.tables' WITH CSV HEADER;\" $DB"
-
-gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.log ${GCS_BUCKET}/${DB}/${FILELOG}.log
 gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.tables ${GCS_BUCKET}/${DB}/${FILELOG}.tables
 
-sleep 120
+sleep 300
