@@ -202,15 +202,15 @@ BEGIN
 		into registro
 		from fnc_get_load_table();
 
-		drop table if exists tmp_record;
-		CREATE TEMP TABLE tmp_record  (
+		drop table if exists temporal.tmp_record;
+		CREATE unlogged TABLE temporal.tmp_record  (
 			respuesta VARCHAR
-		) ON COMMIT DROP;
+		);
 
 		v_estado = 'CARGADA';
         v_columns = generate_ddl_columns_table(registro.esquema, registro.tabla);
 		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" ';
-		v_sql = 'COPY tmp_record FROM PROGRAM ''' || v_comando || '''';
+		v_sql = 'COPY temporal.tmp_record FROM PROGRAM ''' || v_comando || '''';
 				
 		BEGIN
 			raise notice 'sql: %', v_sql;

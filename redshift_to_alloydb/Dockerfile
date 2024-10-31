@@ -7,6 +7,7 @@ ADD ./restore_redshift_to_alloydb.sql /home/restore_redshift_to_alloydb.sql
 ADD ./table_redshift_to_alloydb.sh /home/table_redshift_to_alloydb.sh
 ADD ./unload_redshift.sh /home/unload_redshift.sh
 ADD ./pg_hba.conf /home/pg_hba.conf
+ADD ./postgresql.conf /home/postgresql.conf
 
 EXPOSE 80 5432 6432 22 5439
 

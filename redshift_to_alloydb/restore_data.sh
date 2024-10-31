@@ -97,8 +97,8 @@ else
 
     echo "$(date) : start service postgres" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     cp -f /home/pg_hba.conf /etc/postgresql/16/main/pg_hba.conf
-    chown -R postgres.postgres /etc/postgresql/16/main/pg_hba.conf
-    chown -R postgres:postgres /etc/postgresql/16/main/pg_hba.conf
+    cp -f /home/postgresql.conf /etc/postgresql/16/main/postgresql.conf
+    chown -R postgres.postgres /etc/postgresql/16/main/*
     su postgres -c "/usr/lib/postgresql/16/bin/postgres -c config_file=/etc/postgresql/16/main/postgresql.conf &>/dev/null &"
     sleep 10
 
@@ -140,5 +140,10 @@ else
 fi
 
 echo "$(date) : end process restore" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+
+su postgres -c "psql -h localhost -p 5432 -U postgres -c \"\\copy (select * from temporal.tables_load) TO '${FOLDER_POSTGRES}/${FILELOG}.tables' WITH CSV HEADER;\" $DB"
+
+gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.log ${GCS_BUCKET}/${DB}/${FILELOG}.log
+gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.tables ${GCS_BUCKET}/${DB}/${FILELOG}.tables
 
 sleep 120
