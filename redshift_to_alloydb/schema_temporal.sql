@@ -1,9 +1,3 @@
-create type type_get_load_table as(
-	id integer,
-	tabla varchar,
-	esquema varchar
-);
-
 create schema temporal;
 
 drop table if exists temporal.tables_load;
@@ -12,7 +6,9 @@ create table temporal.tables_load(
 	tabla varchar,
 	esquema varchar,
 	estado varchar default 'PENDIENTE',
-	foraneas integer default 0
+	foraneas integer default 0,
+	inicio timestamp,
+	fin timestamp
 );
 
 drop table if exists temporal.tables_foreing;
@@ -176,7 +172,6 @@ $BODY$
 LANGUAGE 'plpgsql' COST 100.0 SECURITY INVOKER;
 
 drop function if exists fnc_copy_table_info_redshift();
-
 CREATE OR REPLACE function fnc_copy_table_info_redshift(p_id integer, p_folder varchar)
   RETURNS text AS
 $BODY$
@@ -211,7 +206,7 @@ BEGIN
 	
 		v_estado = 'CARGADA';
 	    v_columns = generate_ddl_columns_table(registro.esquema, registro.tabla);
-		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" '|| p_folder;
+		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| p_folder ||' '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" ';
 		v_sql = 'COPY tmp_record FROM PROGRAM ''' || v_comando || '''';
 					
 		BEGIN
@@ -222,7 +217,8 @@ BEGIN
 		END;
 	
 		update temporal.tables_load set 
-			estado = v_estado
+			estado = v_estado,
+			fin = now()
 		where 
 			id = registro.id;
 	
@@ -278,7 +274,8 @@ begin
 			v_return = registro.id;
 
 			update temporal.tables_load set 
-				estado = 'PROCESANDO'
+				estado = 'PROCESANDO',
+				inicio = now()
 			where 
 				id = registro.id;
 
