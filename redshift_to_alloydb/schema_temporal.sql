@@ -21,13 +21,6 @@ create table temporal.tables_foreing(
 	esquema_foranea varchar
 );
 
-drop table if exists temporal.logs_migration;
-create table temporal.logs_migration(
-	tabla varchar,
-	esquema varchar,
-	logs varchar
-);
-
 CREATE OR REPLACE FUNCTION generate_create_table_statement(p_schema varchar, p_table varchar)
   RETURNS text AS
 $BODY$
