@@ -138,8 +138,6 @@ else
     psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB < $FOLDER_BACKUP/${DB}_local.sql
 
     echo "$(date) : restore data redshift to alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
-    su postgres -c "psql -h localhost -p 5432 -U postgres $DB < $FOLDER_POSTGRES/restore_redshift_to_alloydb.sql"
-
     COMMAND="psql -h localhost -p 5432 -U postgres -tAc "
     SQL="SELECT COUNT(1) FROM temporal.tables_load WHERE estado="
     COUNT=$(su postgres -c "$COMMAND \"${SQL}'PENDIENTE'\" ${DB}")
@@ -150,7 +148,7 @@ else
             COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
             
             if [ "$COUNT" -eq 3 ]; then
-                sleep 10
+                sleep 2
                 COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
             fi
 
@@ -168,7 +166,7 @@ else
         COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
         if [ "$COUNT" -gt 0 ]; then
             while [ $COUNT -gt 0 ]; do
-                sleep 60
+                sleep 10
                 COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
             done
         fi
