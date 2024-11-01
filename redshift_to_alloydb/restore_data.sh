@@ -183,5 +183,3 @@ fi
 
 echo "$(date) : end process restore" >> ${FOLDER_POSTGRES}/${FILELOG}.log
 gsutil cp ${FOLDER_POSTGRES}/${FILELOG}.tables ${GCS_BUCKET}/${DB}/${DATETIME}/${FILELOG}.tables
-
-sleep 300
