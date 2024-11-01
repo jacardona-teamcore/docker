@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: process-redshift-alloydb
+spec:
+  serviceAccountName: restore-pg-arch360
+  entrypoint: main
+  ttlStrategy:
+    secondsAfterCompletion: 300
+  nodeSelector:
+    cloud.google.com/compute-class: Performance
+    cloud.google.com/machine-family: c3d
+  volumes:
+  - name: acceso-vpn
+    secret:
+      secretName: acceso-vpn
+  - name: acceso-aws
+    secret:
+      secretName: acceso-aws
+  - name: google-cloud-key
+    projected:
+      sources:
+      - serviceAccountToken:
+          path: token
+          audience: https://oauth2.googleapis.com/token
+          expirationSeconds: 7200
+  templates:
+  - name: main
+    container:
+      image: "us-east1-docker.pkg.dev/teamcore-architecture360/restore/instance_redshift_pg_alloydb:1.9"
+      command: ['/home/restore_data.sh']
+      args: ['NAME_DB','REDSHIFT_IP','REDSHIFT_PORT','REDSHIFT_USER','REDSHIFT_PWD','ALLOYDB_IP','ALLOYDB_PORT','ALLOYDB_USER','ALLOYDB_PWD','BUCKET_S3','BUCKET_GCP','CREDENCIAL_S3_UNLOAD','VPN_IP','MAX_CYCLES']
+      volumeMounts:
+      - name: acceso-vpn
+        mountPath: /home/vpn/
+      - name: acceso-aws
+        mountPath: /home/aws/
+      resources:
+          limits :
+            memory: "10Gi"
+            cpu: "4"
+            ephemeral-storage: "1000Gi"
+          requests:
+            memory: "10Gi"
+            cpu: "4"
+            ephemeral-storage: "1000Gi"
