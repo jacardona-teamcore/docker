@@ -55,10 +55,16 @@ if [ -s "$FOLDER_TABLES/$FILE" ]; then
   export PGPASSWORD="$ALLOYDB_PASSWORD"
   /usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB < ${FOLDER_UNLOAD}/COPY_${FILE}.sql
 
+  COUNT=$(/usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -tAc "select count(1) from ${SCHEMA}.${TABLE} " $DB)
+
+  /usr/bin/psql -h localhost -p 5432 -U postgres -tAc "update temporal.tables_load set alloydb_count=${COUNT} where esquema='${SCHEMA}' and tabla='${TABLE}'" ${DB}
+
   rm -f $FOLDER_TABLES/$FILE
 else
   echo "El archivo '$FOLDER_TABLES/$FILE' está vacío o no existe."
 fi
+
+/usr/local/bin/aws s3 rm $S3_BUCKET_BASE/$DB/$FOLDER/ --recursive --quiet
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))

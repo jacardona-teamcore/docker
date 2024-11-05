@@ -154,8 +154,14 @@ else
 
             while [ $COUNT -lt $MAX ]
             do
-                $FOLDER_POSTGRES/restore_cycle_tables.sh "${DB}${COUNT}" "${FOLDER_POSTGRES}" &
-                sleep 1
+                # process next table process
+                ID=$(su postgres -c "$COMMAND \"SELECT * FROM fnc_get_load_table()\" ${DB}")
+
+                if [ "${ID}" -gt 0 ]; then
+                    # execute process load
+                    $FOLDER_POSTGRES/restore_cycle_tables.sh  "${ID}" "${BD}" "${DB}_${ID}" "${FOLDER_POSTGRES}" &
+                fi
+                
                 COUNT=$((COUNT + NEXT))
             done
 

@@ -8,7 +8,9 @@ create table temporal.tables_load(
 	estado varchar default 'PENDIENTE',
 	foraneas integer default 0,
 	inicio timestamp,
-	fin timestamp
+	fin timestamp,
+	redshift_count integer default 0,
+	alloydb_count integer default 0
 );
 
 drop table if exists temporal.tables_foreing;
@@ -279,6 +281,8 @@ begin
 		FETCH cursor_tablas INTO registro;
     END LOOP;
     CLOSE cursor_tablas;
+
+	if 
 
 	return next v_return;
 
