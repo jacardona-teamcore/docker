@@ -226,9 +226,10 @@ $BODY$
 LANGUAGE 'plpgsql' COST 100.0 SECURITY INVOKER;
 
 drop function if exists fnc_get_load_table();
-CREATE OR REPLACE function fnc_get_load_table()
-  RETURNS SETOF integer AS
-$BODY$
+CREATE OR REPLACE FUNCTION public.fnc_get_load_table()
+ RETURNS SETOF integer
+ LANGUAGE plpgsql
+AS $function$
 DECLARE
 
     v_tabla_ddl   varchar;
@@ -282,12 +283,10 @@ begin
     END LOOP;
     CLOSE cursor_tablas;
 
-	if 
-
 	return next v_return;
 
 END;
-$BODY$
-LANGUAGE 'plpgsql' COST 100.0 SECURITY INVOKER;
+$function$
+;
 
 select * from fnc_create_schema_depency();
