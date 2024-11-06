@@ -12,6 +12,8 @@ COUNT=$(ssh -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN "PGPA
 
 if [ "${COUNT}" -eq 0 ]; then
     su postgres -c "psql -h localhost -p 5432 -U postgres -c \"update temporal.tables_load set estado = 'VACIA', fin = now() where id = ${ID}\" ${DB}"
+elif [ -z ${COUNT}]; then
+    su postgres -c "psql -h localhost -p 5432 -U postgres -c \"update temporal.tables_load set estado = 'ERROR_COUNT', fin = now() where id = ${ID}\" ${DB}"
 else
     su postgres -c "psql -h localhost -p 5432 -U postgres -c \"update temporal.tables_load set redshift_count =${COUNT} where id = ${ID}\" ${DB}"
     su postgres -c "psql -h localhost -p 5432 -U postgres -c \"select * from fnc_copy_table_info_redshift(${ID},'${FOLDER}')\" ${DB}"

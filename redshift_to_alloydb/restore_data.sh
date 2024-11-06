@@ -144,6 +144,7 @@ else
     NEXT=1
 
     if [ "$COUNT" -gt 0 ]; then
+
         while [ $COUNT -gt 0 ]; do
             COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
             
