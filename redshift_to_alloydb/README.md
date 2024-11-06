@@ -43,12 +43,12 @@ Los siguientes son los archivos implementados para el desarrollo de las activida
  - **Generacion de datos**: Procede a realizar la solicitud de UNLOAD, el cual genera unos archivos de formato gz  particionados en un bucket de S3, por lo cual se proceden a descagar, concatenar y descomprimir, permitiendo obtener el archivo CSV.
  - **Carga de datos**: Procede a crear un SQL de carga de COPY con el archivo CSV, para luego a traves de psql conectar AlloyDB y ejecutar el SQL generado.
 - **restore_data.sh** : Es el comando solicitado para ser ejecutado por el ENTRYPOINT, donde se reciben los parametros globales para la ejecucion y empiza a realizar las siguientes actividades:
- -  **Instalaciones ** : Se procede a realizar la instalacion del servicio de Postgresql y su usuario.
- - ** Ajustar ambiente ** : Se encarga de copiar los archivos necesarios de los procesos a utilizar dentro del usuario postgres, otorgando tambien los accesos a la instancia de vpn de Redshift
- - **Backup Redshift  **: Genera la solicitud del Backup en Redsfhit, para a continuacion proceder a ejecutar unos reemplazos en el archivos, para permitir cambiar ciertas estructuras del DDL que no son posibles de ejecutar en Postgres, pero que se les puede generar un codigo que simula la misma accion.
- - **Restaracion y Backup Local ** : Se procede a restaurar el backup ajustado dentro de la instancia del Postgres, para a continuacion generar un nuevo backup desde la instancia local, para ser utilizado en AlloyDB.
-  - ** Esquema temporal **: Se procede a ejecutar el SQL de esquema temporal, donde se contiene los mecanismos de relacionamiento de tablas.
-  - **Restauracion de datos **: Se procede a llevar acabo la ejecucion de las restauracion de todas las tablas que lograron ser restauradas en el Postgresql, para este proceso se realiaza un ciclo, donde se esta validando que se ejecuta mientras el conteo de registro indique que existen por cargar tabla, en caso de ser esto aceptado procede a llamar al comando "restore_cycle_tables.sh".
+ -  **Instalaciones** : Se procede a realizar la instalacion del servicio de Postgresql y su usuario.
+ - **Ajustar ambiente** : Se encarga de copiar los archivos necesarios de los procesos a utilizar dentro del usuario postgres, otorgando tambien los accesos a la instancia de vpn de Redshift
+ - **Backup Redshift**: Genera la solicitud del Backup en Redsfhit, para a continuacion proceder a ejecutar unos reemplazos en el archivos, para permitir cambiar ciertas estructuras del DDL que no son posibles de ejecutar en Postgres, pero que se les puede generar un codigo que simula la misma accion.
+ - **Restaracion y Backup Local** : Se procede a restaurar el backup ajustado dentro de la instancia del Postgres, para a continuacion generar un nuevo backup desde la instancia local, para ser utilizado en AlloyDB.
+  - **Esquema temporal**: Se procede a ejecutar el SQL de esquema temporal, donde se contiene los mecanismos de relacionamiento de tablas.
+  - **Restauracion de datos**: Se procede a llevar acabo la ejecucion de las restauracion de todas las tablas que lograron ser restauradas en el Postgresql, para este proceso se realiaza un ciclo, donde se esta validando que se ejecuta mientras el conteo de registro indique que existen por cargar tabla, en caso de ser esto aceptado procede a llamar al comando "restore_cycle_tables.sh".
   - **Retroalimentacion**: Se procede a generar los archivos de Logs y se envian al Bucket.
 
 
@@ -59,6 +59,13 @@ Estas son creadas atraves del llamado al archivo "schema_temporal.sql", dentro d
 - **fnc_create_schema_depency** : Cuenta con el proceso para reconocer las tablas creadas y sus respectivas foraneas, permitiendo asi conocer las relaciones entre las distintas tablas de toda la base de datos.
 - **fnc_copy_table_info_redshift** : Es la funcion encargada de realizar el proceso de carga de Redshift a AlloyDB, esto lo hace en conjunto con el archivo "table_redshift_to_alloydb.sh".
 - **fnc_get_load_table** : Como son muchas tablas  el proceso debe cargarlas segun su dependencia, esta funcion se encarga de devolver la tabla que puede ser cargada y que no generar conflicto por dependencias de foraneas.
+
+## Controles
+Para mitigar ciertos errores en el proceso, se realizan la implementacion de controles de revision del flujo, entre los cuales se encuentran:
+- **Base de datos Existe** : El proceso al iniciar la ejecucion del "restore_data.sh", realiza una revision de si la base de datos enviada para la ejecucion existe en AlloyDB, en caso de ser correcta esta validacion el proceso no ejecuta y deja el regsitro en el log.
+- **Pendientes** : El mecanismo para la restauracion de las tablas, valida que en la carga de esquemas, se tengan tablas en estado PENDIENTE, con esto iniciar el flujo de carga.
+- **Hilos** : Para optimizar el proceso de carga, se implementa el parametro MAX, donde se tiene el numero maximo de hilos que pueden ser ejecutado durante la carga.
+- **Conteo vacio** o nulo : En la solicitud de carga, se realiza un llamado a Redshift para validar el numero de registros de la tabla, en caso de ser 0 se toma como vacio, pero si se presenta un error en la conexion y el resultado es vacio se toma como error la carga.
 
 ##Notas
 - En esta documentacion se entrega las llaves publica y privadas, la privada para este proceso es cargada por llaves secretas en el GKE, se puede crear a traves del comando "kubectl create secret generic acceso-vpn -n argo --from-file=key=key"
