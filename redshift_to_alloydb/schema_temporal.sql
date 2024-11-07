@@ -62,6 +62,7 @@ $BODY$
 DECLARE
     v_tabla_ddl   text;
     registro record;
+	v_column text;
 
 	cursor_columnas cursor is
 	SELECT column_name, data_type 
@@ -75,7 +76,8 @@ BEGIN
 	OPEN cursor_columnas;
     FETCH cursor_columnas INTO registro;
     WHILE found LOOP 
-		v_tabla_ddl =  v_tabla_ddl || ',' || registro.column_name ;
+		v_column = case when registro.column_name in ('table', 'order') then '\"' || registro.column_name || '\"' else registro.column_name end;
+		v_tabla_ddl =  v_tabla_ddl || ',' || v_column ;
 
         FETCH cursor_columnas INTO registro;
     END LOOP; 

@@ -108,8 +108,12 @@ else
     ssh -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN "PGPASSWORD=$REDSHIFT_PASSWORD pg_dump -U $REDSHIFT_USER -h $REDSHIFT_IP -p $REDSHIFT_PORT --format=plain -s --no-synchronized-snapshots -f $FOLDER_REMOTO/$DB.sql $DB"
     scp -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN:$FOLDER_REMOTO/$DB.sql $FOLDER_BACKUP/$DB.sql
     echo "$(date) : ajustando pg_dump REDSHIT" >> ${FOLDER_POSTGRES}/${DB}.log
-    sed -i "s/DEFAULT \"identity\"([0-9]\+, 0, '1,1'::text) NOT NULL/ /g"  $FOLDER_BACKUP/$DB.sql
-    sed -i "s/DEFAULT default_identity([0-9]\+, 0, '1,1'::text) NOT NULL/ /g"  $FOLDER_BACKUP/$DB.sql
+    sed -i "s/DEFAULT \"identity\"([0-9]\+, [0-9]\+, '1,1'::text) NOT NULL/ /g"  $FOLDER_BACKUP/$DB.sql
+    sed -i "s/DEFAULT \"identity\"([0-9]\+, [0-9]\+, '1,1'::text)/ /g"  $FOLDER_BACKUP/$DB.sql
+    sed -i "s/DEFAULT default_identity([0-9]\+, [0-9]\+, '1,1'::text) NOT NULL/ /g"  $FOLDER_BACKUP/$DB.sql
+    sed -i "s/DEFAULT default_identity([0-9]\+, [0-9]\+, '1,1'::text)/ /g"  $FOLDER_BACKUP/$DB.sql
+    sed -i "s/boolean DEFAULT 0/boolean DEFAULT false/g"  $FOLDER_BACKUP/$DB.sql
+    sed -i "s/boolean DEFAULT 1/boolean DEFAULT true/g"  $FOLDER_BACKUP/$DB.sql
     sed -i "s/getdate()/ now()/g" $FOLDER_BACKUP/$DB.sql
     sed -i "s/CREATE CAST ([a-z]\+ AS binary varying)/-- /g" $FOLDER_BACKUP/$DB.sql
     sed -i "s/CREATE CAST (binary varying AS/-- /g" $FOLDER_BACKUP/$DB.sql

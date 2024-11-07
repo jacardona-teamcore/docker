@@ -50,7 +50,7 @@ mv -f $FOLDER_UNLOAD/$FILE $FOLDER_TABLES/$FILE
 if [ -s "$FOLDER_TABLES/$FILE" ]; then
   echo "restore alloydb... ${SCHEMA}.${TABLE} ..."
   rm -f ${FOLDER_UNLOAD}/COPY_${FILE}.sql
-  COPY="\\COPY ${SCHEMA}.${TABLE}(${COLUMN}) FROM '${FOLDER_TABLES}/${FILE}' DELIMITER '|' NULL AS ''"
+  COPY="\\COPY ${SCHEMA}.${TABLE}(${COLUMN}) FROM '${FOLDER_TABLES}/${FILE}' DELIMITER '|' NULL AS 'null'"
   echo $COPY > COPY_${FILE}.sql
   export PGPASSWORD="$ALLOYDB_PASSWORD"
   /usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB < ${FOLDER_UNLOAD}/COPY_${FILE}.sql
