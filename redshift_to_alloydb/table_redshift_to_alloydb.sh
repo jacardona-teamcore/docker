@@ -1,8 +1,9 @@
 #!/bin/bash
-FOLDER=$1
-SCHEMA=$2
-TABLE=$3
-COLUMN=$4
+CLONE=$1
+FOLDER=$2
+SCHEMA=$3
+TABLE=$4
+COLUMN=$5
 FILE=$1_$2
 
 FOLDER_POSTGRES="/home/postgres"
@@ -53,7 +54,7 @@ if [ -s "$FOLDER_TABLES/$FILE" ]; then
   COPY="\\COPY ${SCHEMA}.${TABLE}(${COLUMN}) FROM '${FOLDER_TABLES}/${FILE}' DELIMITER '|' NULL AS 'null'"
   echo $COPY > COPY_${FILE}.sql
 
-  if [[ ${TABLE} == "categories" || ${TABLE} == "chain_products" || ${TABLE} == "factors" ]]; then
+  if [[ ${CLONE} -eq 1 ]]; then
     /usr/bin/psql -h localhost -p 5432 -U postgres ${DB} < ${FOLDER_UNLOAD}/COPY_${FILE}.sql
     rm -f ${FOLDER_TABLES}/${FILE}
     /usr/bin/psql -h localhost -p 5432 -U postgres -c "\\copy (select distinct * from ${SCHEMA}.${TABLE}) TO '${FOLDER_TABLES}/${FILE}' DELIMITER '|' NULL AS 'null';" $DB

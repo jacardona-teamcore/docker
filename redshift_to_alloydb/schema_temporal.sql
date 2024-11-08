@@ -183,6 +183,7 @@ DECLARE
 	v_estado varchar;
 	v_carpeta varchar;
 	v_comando varchar;
+	v_clone varchar;
 
 BEGIN
 	v_index = 0;
@@ -191,6 +192,8 @@ BEGIN
 	if p_id = 0 then
 		v_return = 'NOTHING';
 	else
+		v_clone = CASE WHEN registro.tabla in ('categories','chain_products', 'factors') THEN '1' ELSE '0' END;
+
 		select id, esquema, tabla
 		into registro
 		from temporal.tables_load
@@ -203,7 +206,7 @@ BEGIN
 	
 		v_estado = 'CARGADA';
 	    v_columns = generate_ddl_columns_table(registro.esquema, registro.tabla);
-		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| p_folder ||' '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" ';
+		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| v_clone ||' '|| p_folder ||' '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" ';
 		v_sql = 'COPY tmp_record FROM PROGRAM ''' || v_comando || '''';
 					
 		BEGIN
@@ -213,7 +216,7 @@ BEGIN
 			v_estado = 'ERROR';
 		END;
 	
-		if registro.tabla in ('categories','chain_products','factors') then
+		if v_clone = '1' then
 			v_sql = 'select count(1) from (select distinct * from ' || registro.esquema ||'.'|| registro.tabla || ') as consu';
 			EXECUTE v_sql into v_count;
 
@@ -221,7 +224,8 @@ BEGIN
 				estado = v_estado,
 				redshift_count = v_count
 			where 
-				id = registro.id;
+				id = registro.id and 
+				v_count > 0;
 		end if;
 	
 		v_return = 'OK';
