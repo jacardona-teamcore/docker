@@ -192,12 +192,13 @@ BEGIN
 	if p_id = 0 then
 		v_return = 'NOTHING';
 	else
-		v_clone = CASE WHEN registro.tabla in ('categories','chain_products', 'factors') THEN '1' ELSE '0' END;
 
 		select id, esquema, tabla
 		into registro
 		from temporal.tables_load
 		where id = p_id;
+		
+		v_clone = CASE WHEN registro.tabla in ('categories','chain_products', 'factors') THEN '1' ELSE '0' END;
 	
 		drop table if exists tmp_record;
 		CREATE temp TABLE tmp_record  (
