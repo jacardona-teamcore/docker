@@ -184,6 +184,7 @@ DECLARE
 	v_carpeta varchar;
 	v_comando varchar;
 	v_clone varchar;
+	v_separador varchar;
 
 BEGIN
 	v_index = 0;
@@ -199,6 +200,7 @@ BEGIN
 		where id = p_id;
 
 		v_clone = CASE WHEN registro.tabla in ('categories','chain_products', 'factors') THEN '1' ELSE '0' END;
+		v_separador = CASE WHEN registro.tabla in ('chains_views') THEN '1' ELSE '0' END;
 	
 		drop table if exists tmp_record;
 		CREATE temp TABLE tmp_record  (
@@ -207,7 +209,7 @@ BEGIN
 	
 		v_estado = 'CARGADA';
 	    v_columns = generate_ddl_columns_table(registro.esquema, registro.tabla);
-		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| v_clone ||' '|| p_folder ||' '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" ';
+		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| v_clone ||' '|| p_folder ||' '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" '|| v_separador ||' ';
 		v_sql = 'COPY tmp_record FROM PROGRAM ''' || v_comando || '''';
 					
 		BEGIN

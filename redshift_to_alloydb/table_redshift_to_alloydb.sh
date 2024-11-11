@@ -4,7 +4,8 @@ FOLDER=$2
 SCHEMA=$3
 TABLE=$4
 COLUMN=$5
-FILE=$1_$2
+SEP=$6
+FILE=${SCHEMA}_${TABLE}
 
 FOLDER_POSTGRES="/home/postgres"
 
@@ -51,7 +52,14 @@ mv -f $FOLDER_UNLOAD/$FILE $FOLDER_TABLES/$FILE
 if [ -s "$FOLDER_TABLES/$FILE" ]; then
   echo "restore alloydb... ${SCHEMA}.${TABLE} ..."
   rm -f ${FOLDER_UNLOAD}/COPY_${FILE}.sql
-  COPY="\\COPY ${SCHEMA}.${TABLE}(${COLUMN}) FROM '${FOLDER_TABLES}/${FILE}' DELIMITER '}' NULL AS 'null'"
+
+  SEPARATOR="}"
+
+  if [ $SEP -eq 1 ]; then
+        SEPARATOR="|"
+  fi
+
+  COPY="\\COPY ${SCHEMA}.${TABLE}(${COLUMN}) FROM '${FOLDER_TABLES}/${FILE}' DELIMITER '${SEPARATOR}' NULL AS 'null'"
   echo $COPY > COPY_${FILE}.sql
 
   if [[ ${CLONE} -eq 1 ]]; then
