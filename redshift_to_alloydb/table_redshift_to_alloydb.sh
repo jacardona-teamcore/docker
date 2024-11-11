@@ -51,13 +51,14 @@ mv -f $FOLDER_UNLOAD/$FILE $FOLDER_TABLES/$FILE
 if [ -s "$FOLDER_TABLES/$FILE" ]; then
   echo "restore alloydb... ${SCHEMA}.${TABLE} ..."
   rm -f ${FOLDER_UNLOAD}/COPY_${FILE}.sql
-  COPY="\\COPY ${SCHEMA}.${TABLE}(${COLUMN}) FROM '${FOLDER_TABLES}/${FILE}' DELIMITER '|' NULL AS 'null'"
+  COPY="\\COPY ${SCHEMA}.${TABLE}(${COLUMN}) FROM '${FOLDER_TABLES}/${FILE}' DELIMITER '}' NULL AS 'null'"
   echo $COPY > COPY_${FILE}.sql
 
   if [[ ${CLONE} -eq 1 ]]; then
     /usr/bin/psql -h localhost -p 5432 -U postgres ${DB} < ${FOLDER_UNLOAD}/COPY_${FILE}.sql
+
     rm -f ${FOLDER_TABLES}/${FILE}
-    /usr/bin/psql -h localhost -p 5432 -U postgres -c "\\copy (select distinct * from ${SCHEMA}.${TABLE}) TO '${FOLDER_TABLES}/${FILE}' DELIMITER '|' NULL AS 'null';" $DB
+    /usr/bin/psql -h localhost -p 5432 -U postgres -c "\\copy (select distinct * from ${SCHEMA}.${TABLE}) TO '${FOLDER_TABLES}/${FILE}' DELIMITER '}' NULL AS 'null';" $DB
   fi
 
   export PGPASSWORD="$ALLOYDB_PASSWORD"

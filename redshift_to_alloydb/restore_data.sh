@@ -126,6 +126,9 @@ else
     su postgres -c "createdb -h localhost -p 5432 -U postgres $DB"
     su postgres -c "psql -h localhost -p 5432 -U postgres $DB < ${FOLDER_BACKUP}/${DB}.sql"
 
+    echo "$(date) : delete constraint" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+    su postgres -c "psql -h localhost -p 5432 -U postgres $DB < $FOLDER_POSTGRES/schema_constraint.sql"
+
     echo "$(date) : create backup local" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "pg_dump -U postgres -h localhost -p 5432  --format=plain -s -f $FOLDER_BACKUP/${DB}_local.sql $DB"
 

@@ -197,7 +197,7 @@ BEGIN
 		into registro
 		from temporal.tables_load
 		where id = p_id;
-		
+
 		v_clone = CASE WHEN registro.tabla in ('categories','chain_products', 'factors') THEN '1' ELSE '0' END;
 	
 		drop table if exists tmp_record;
@@ -404,11 +404,43 @@ END;
 $function$
 ;
 
+drop FUNCTION public.fnc_set_max_table_chains_product(p_schema varchar, p_table varchar);
+CREATE OR REPLACE FUNCTION public.fnc_set_max_table_chains_product(p_schema varchar, p_table varchar)
+ RETURNS SETOF integer
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+
+    registro record;
+	v_query varchar;
+	v_return integer;
+
+
+
+begin
+
+	v_return = 0;
+	
+	CREATE temp TABLE tmp_record  (
+		chain_id integer, 
+		combi_prod_id integer,
+		id integer		
+	);
+		
+	v_query = 'insert into tmp_record select chain_id, combi_prod_id, max(id) from '|| p_schema ||'.'|| p_table ||' group by 1,2 ';
+	execute v_query;
+
+	v_query = 'delete from '|| p_schema ||'.'|| p_table ||' where id not in (select id from tmp_record)';
+
+	execute v_query;
+
+	return next v_return;
+
+END;
+$function$
+;
 
 select * from fnc_create_schema_depency();
 select * from fnc_set_primary_key('categories');
 select * from fnc_set_primary_key('factors');
 select * from fnc_set_primary_key('chain_products');
-select * from public.fnc_set_constraint('chain_products', 'chain_products_chain_id_key');
-select * from public.fnc_set_constraint('chain_products', 'chain_products_chain_id_key1');
-select * from public.fnc_set_constraint('chain_products', 'chain_products_combi_prod_id_fkey');

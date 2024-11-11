@@ -8,6 +8,7 @@ ADD ./unload_redshift.sh /home/unload_redshift.sh
 ADD ./pg_hba.conf /home/pg_hba.conf
 ADD ./postgresql.conf /home/postgresql.conf
 ADD ./restore_cycle_tables.sh /home/restore_cycle_tables.sh
+ADD ./schema_constraint.sql /home/schema_constraint.sql
 
 EXPOSE 80 5432 6432 22 5439
 

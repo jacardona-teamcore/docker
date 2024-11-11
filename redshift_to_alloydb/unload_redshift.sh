@@ -10,7 +10,7 @@ QUERY="UNLOAD ('SELECT * FROM ${SCHEMA}.${TABLE}')
   TO '${S3_BUCKET_BASE}/${DB}/${FOLDER}/'
   CREDENTIALS 'aws_iam_role=${IAM_ROLE}'
   CLEANPATH
-  DELIMITER '|'
+  DELIMITER '}'
   NULL AS 'null'
   GZIP;"
 
