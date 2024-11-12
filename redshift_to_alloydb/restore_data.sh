@@ -96,9 +96,17 @@ else
     chown -R postgres:postgres /var/lib/postgresql/
     chmod 600 /var/lib/postgresql/.aws/credentials
 
+    if [[ $MAX -ge 9 ]]; then
+        PGCORE="12"
+    elif [[ $MAX -ge 5 ]]; then
+        PGCORE="8"
+    else
+        PGCORE=""
+    fi
+
     echo "$(date) : start service postgres" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     cp -f /home/pg_hba.conf /etc/postgresql/16/main/pg_hba.conf
-    cp -f /home/postgresql.conf /etc/postgresql/16/main/postgresql.conf
+    cp -f /home/postgresql${PGCORE}.conf /etc/postgresql/16/main/postgresql.conf
     chown -R postgres.postgres /etc/postgresql/16/main/*
     chown -R postgres:postgres /etc/postgresql/16/main/*
     su postgres -c "/usr/lib/postgresql/16/bin/postgres -c config_file=/etc/postgresql/16/main/postgresql.conf &>/dev/null &"

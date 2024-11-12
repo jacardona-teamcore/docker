@@ -7,6 +7,8 @@ ADD ./table_redshift_to_alloydb.sh /home/table_redshift_to_alloydb.sh
 ADD ./unload_redshift.sh /home/unload_redshift.sh
 ADD ./pg_hba.conf /home/pg_hba.conf
 ADD ./postgresql.conf /home/postgresql.conf
+ADD ./postgresql8.conf /home/postgresql8.conf
+ADD ./postgresql12.conf /home/postgresql12.conf
 ADD ./restore_cycle_tables.sh /home/restore_cycle_tables.sh
 ADD ./schema_constraint.sql /home/schema_constraint.sql
 
