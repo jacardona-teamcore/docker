@@ -77,7 +77,7 @@ Para mitigar ciertos errores en el proceso, se realizan la implementacion de con
 - Para el uso de los servicios de Postgres, en la instancia de VPN durante pruebas se usa la version 12, mientras que para la instancia de GKE se instala una version 16.
 - No se sube en esta documentacion el archivo de credenciales de AWS, pero debe ser montado a traves de una llave secreta como "kubectl create secret generic acceso-aws -n argo --from-file=credentials=credentials"
 - Se comparte el archivo argos.yml, es un archivo con la estructura necesaria para ejecutar esta imagen en GKEa traves de argos y puede servir como ayuda para incluirlo dentro del cron de argos.
-- Por problemas de integrida en los datos se implementaron procesos, para eliminar constrain en las tablas chain_products, factors, stock, categories y sales.
+- Por problemas de integrida en los datos se implementaron procesos, para eliminar constrain en las tablas chain_products, factors, stock, categories y sales, esto se puede validar en el archivo "schema_constraint.sql"
 - Los parametros que recibe el proceso "restore_data.sh" son los siguientes:
  1. Nombre de base de datos
  2. IP de servicio Redshift
