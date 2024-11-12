@@ -35,9 +35,10 @@ Ademas dentro de estos se adjuntan los archivos SQL de los backups generados, ta
 Los siguientes son los archivos implementados para el desarrollo de las actividades mencionadas anteriormente:
 - **Keys** : En esta carpeta se encuentran las llaves de acceso, que fueron creadas para permitir que la instancia que se cree con esta imagen se pueda conectar via ssh con la instancia que sirve para acceder a Redshift.
 - **pg_hba** : Archivo con la configuracion de accesos, el cual le permite al usuario postgres acceder via local, sin autenticacion.
-- **postgres.conf** : Contiene las configuraciones para la implementacion de postgres en una instancia de E2.
+- **postgres.conf** : Contiene las configuraciones para la implementacion de postgres en una instancia de E2. Se tienen de este dos archivos con 8 y 12, que representan configuraciones para ese numero de nucleos. Esto se configura dinamicamente por el proceso, con el valor asignado a la variable de MAX.
 - **unload_redshift.sh**: Contiene el proceso para la ejecucion del comando UNLOAD en Redshift, donde este archivo no pertenece a este imagen, sino que se encuentra dentro de la instancia VPN.
-- **schema_temporal.sql**: Cuenta con la creacion de las Tablas y Funciones, necesarias para permitir el relacionamiento entre tablas foraneas y funciones para la carga de la informacion.
+- **schema_constraint.sql**: Cuenta con el codigo para realizar el borrado de las constrain de las tablas(chains_product, factors, sales, stock), esto por motivo que existen errores de integrida en los datos, donde las llaves foraneas no existen y por ende AlloyDB no deja cargar la informacion.
+- **schema_temporal.sql**: Cuenta con la creacion de las Tablas y Funciones, necesarias para permitir el relacionamiento entre tablas foraneas y funciones para la carga de la informacion. Tambien se implementan proceso para eliminar datos duplicados, los cuales estan asociados a las tablas (categories, factors, chains_product).
 - **restore_cycle_tables.sh** : Es el comando ejecutado por el ciclo de llenado de tablas, este proceso cuenta con una validacion, para validar que existan registros PENDIENTE por ejecutar, consulta cual es la tabla a ejecutar, para proceder a realizar el llamado de "table_redshift_to_alloydb.sh" 
 - **table_redshift_to_alloydb.sh** : Contiene los procesos encargados de ejecutar la generacion de los datos en Redshift y luego son transferidos a AlloyDB, para esto realiza:
  - **Generacion de datos**: Procede a realizar la solicitud de UNLOAD, el cual genera unos archivos de formato gz  particionados en un bucket de S3, por lo cual se proceden a descagar, concatenar y descomprimir, permitiendo obtener el archivo CSV.
@@ -57,15 +58,18 @@ Estas son creadas atraves del llamado al archivo "schema_temporal.sql", dentro d
 - **generate_create_table_statement** : Permite generar el SQL de create de una tabla.
 - generate_ddl_columns_table : Permite consulta el listado de las columnas que contiene una tabla, este es usado para el proceso de COPY.
 - **fnc_create_schema_depency** : Cuenta con el proceso para reconocer las tablas creadas y sus respectivas foraneas, permitiendo asi conocer las relaciones entre las distintas tablas de toda la base de datos.
-- **fnc_copy_table_info_redshift** : Es la funcion encargada de realizar el proceso de carga de Redshift a AlloyDB, esto lo hace en conjunto con el archivo "table_redshift_to_alloydb.sh".
+- **fnc_copy_table_info_redshift** : Es la funcion encargada de realizar el proceso de carga de Redshift a AlloyDB, esto lo hace en conjunto con el archivo "table_redshift_to_alloydb.sh". Cuenta ademas con la verificacion de que tablas, se les tiene realizar el mecanismo de distinct para datos duplicados en llaves primaria y que tables se deben ajustar para intercambiar el separador, siendo 0='}' y 1='|'. 
 - **fnc_get_load_table** : Como son muchas tablas  el proceso debe cargarlas segun su dependencia, esta funcion se encarga de devolver la tabla que puede ser cargada y que no generar conflicto por dependencias de foraneas.
+- **fnc_set_primary_key** : Funcion encargada de eliminar constrain de llave primario, esto por motivo que las tablas asociados a errores de duplicidad, se cargan dentro del ambiente de transiccion y luego se realiza un distinct, para solo devolver los datos sin duplicidad.
+- **fnc_set_constraint** : Funcion creada para eliminar constrain especificas de unas tablas, dado a que generan errores de integridad al tener datos en la tabla, que no estan en la tabla asociada.
 
 ## Controles
 Para mitigar ciertos errores en el proceso, se realizan la implementacion de controles de revision del flujo, entre los cuales se encuentran:
 - **Base de datos Existe** : El proceso al iniciar la ejecucion del "restore_data.sh", realiza una revision de si la base de datos enviada para la ejecucion existe en AlloyDB, en caso de ser correcta esta validacion el proceso no ejecuta y deja el regsitro en el log.
 - **Pendientes** : El mecanismo para la restauracion de las tablas, valida que en la carga de esquemas, se tengan tablas en estado PENDIENTE, con esto iniciar el flujo de carga.
 - **Hilos** : Para optimizar el proceso de carga, se implementa el parametro MAX, donde se tiene el numero maximo de hilos que pueden ser ejecutado durante la carga.
-- **Conteo vacio** o nulo : En la solicitud de carga, se realiza un llamado a Redshift para validar el numero de registros de la tabla, en caso de ser 0 se toma como vacio, pero si se presenta un error en la conexion y el resultado es vacio se toma como error la carga.
+- **Conteo vacio o nulo** : En la solicitud de carga, se realiza un llamado a Redshift para validar el numero de registros de la tabla, en caso de ser 0 se toma como vacio, pero si se presenta un error en la conexion y el resultado es vacio se toma como error la carga.
+- **Datos duplicados** : se implemento proceso para generar u distinct sobre las tablas(categories, sales, factors), para solo generar los datos unicos, por motivo que existen relaciones de datos en esta tablas donde dos registros identicos existen.
 
 ##Notas
 - En esta documentacion se entrega las llaves publica y privadas, la privada para este proceso es cargada por llaves secretas en el GKE, se puede crear a traves del comando "kubectl create secret generic acceso-vpn -n argo --from-file=key=key"
@@ -73,6 +77,7 @@ Para mitigar ciertos errores en el proceso, se realizan la implementacion de con
 - Para el uso de los servicios de Postgres, en la instancia de VPN durante pruebas se usa la version 12, mientras que para la instancia de GKE se instala una version 16.
 - No se sube en esta documentacion el archivo de credenciales de AWS, pero debe ser montado a traves de una llave secreta como "kubectl create secret generic acceso-aws -n argo --from-file=credentials=credentials"
 - Se comparte el archivo argos.yml, es un archivo con la estructura necesaria para ejecutar esta imagen en GKEa traves de argos y puede servir como ayuda para incluirlo dentro del cron de argos.
+- Por problemas de integrida en los datos se implementaron procesos, para eliminar constrain en las tablas chain_products, factors, stock, categories y sales.
 - Los parametros que recibe el proceso "restore_data.sh" son los siguientes:
  1. Nombre de base de datos
  2. IP de servicio Redshift
