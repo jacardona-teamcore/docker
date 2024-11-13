@@ -137,6 +137,9 @@ BEGIN
 		    ON ccu.constraint_name = tc.constraint_name
 		WHERE tc.constraint_type = 'FOREIGN KEY';
 
+	delete from temporal.tables_foreing
+	where esquema_foranea not in ('public','dba_views') and esquema <> esquema_foranea;
+
 	update temporal.tables_foreing a set
 		id = b.id
 	from 
@@ -250,6 +253,7 @@ DECLARE
     registro record;
 	v_sql varchar;
 	v_count  integer;
+	v_count_sales integer;
 	v_index integer;
 	v_return integer;
 
@@ -257,40 +261,53 @@ DECLARE
     SELECT 
 		id,
        	tabla,
+		foraneas,
        	esquema
     FROM
         temporal.tables_load b
     where
         estado = 'PENDIENTE'
-	order by foraneas asc;
+	order by 
+		esquema desc, 
+		foraneas asc, 
+		tabla desc;
 
 begin
 
 	v_return = 0;
+
+	SELECT 
+		count(1) into v_count_sales
+    FROM
+        temporal.tables_load b
+    where
+		tabla = 'sales' and
+        estado = 'PROCESANDO';
 	
 	OPEN cursor_tablas;
     FETCH cursor_tablas INTO registro;
     WHILE found LOOP
-		select count(1) into v_count
-		from 
-			temporal.tables_load a,
-			temporal.tables_foreing b
-		where 
-			a.estado = 'PENDIENTE' and 
-			registro.id = b.id and
-			b.id_foranea = a.id ;
-	
-		if v_count = 0 then
-			v_return = registro.id;
-
-			update temporal.tables_load set 
-				estado = 'PROCESANDO',
-				inicio = now()
+		if v_count_sales < 4 or registro.tabla <> 'sales' then	
+			select count(1) into v_count
+			from 
+				temporal.tables_load a,
+				temporal.tables_foreing b
 			where 
-				id = registro.id;
+				a.estado = 'PENDIENTE' and 
+				registro.id = b.id and
+				b.id_foranea = a.id ;
+		
+			if v_count = 0 then
+				v_return = registro.id;
 
-			
-			EXIT;
+				update temporal.tables_load set 
+					estado = 'PROCESANDO',
+					inicio = now()
+				where 
+					id = registro.id;
+				
+				EXIT;
+			end if;
 		end if;
 
 		FETCH cursor_tablas INTO registro;
