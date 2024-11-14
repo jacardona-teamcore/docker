@@ -184,7 +184,7 @@ else
             COUNT=$(su postgres -c "$COMMAND \"${SQL}'PENDIENTE'\" ${DB}")
         done
 
-        echo "$(date) : end validate load" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+        echo "$(date) : start validate load" >> ${FOLDER_POSTGRES}/${FILELOG}.log
         COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
         if [ "$COUNT" -gt 0 ]; then
             while [ $COUNT -gt 0 ]; do
@@ -192,6 +192,7 @@ else
                 COUNT=$(su postgres -c "$COMMAND \"${SQL}'PROCESANDO'\" ${DB}")
             done
         fi
+        echo "$(date) : end validate load" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     fi
     
     ssh -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN "rm -f $FOLDER_REMOTO/$FILEPARAMETERS.sh"

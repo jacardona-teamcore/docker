@@ -53,8 +53,9 @@ select * from public.fnc_set_constraint('chain_products', 'chain_products_chain_
 select * from public.fnc_set_constraint('chain_products', 'chain_products_combi_prod_id_fkey');
 select * from public.fnc_set_constraint('factors', 'factors_chain_product_id_fkey');
 select * from public.fnc_set_constraint('stock', 'stock_chain_prod_id_fkey');
+select * from public.fnc_set_constraint('stock', 'stock_category_id_fkey');
 select * from public.fnc_set_constraint('stock', 'stock_combi_geo_id_fkey');
 select * from public.fnc_set_constraint('sales', 'sales_category_id_fkey');
 select * from public.fnc_set_constraint('sales', 'sales_chain_prod_id_fkey');
 select * from public.fnc_set_constraint('sales', 'sales_combi_geo_id_fkey');
-
+select * from public.fnc_set_constraint('stock_lost_sales', 'stock_lost_sales_stock_id_fkey');

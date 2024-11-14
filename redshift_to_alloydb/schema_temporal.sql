@@ -171,7 +171,7 @@ END;
 $BODY$
 LANGUAGE 'plpgsql' COST 100.0 SECURITY INVOKER;
 
-drop function if exists fnc_copy_table_info_redshift();
+drop function if exists fnc_copy_table_info_redshift(p_id integer, p_folder varchar);
 CREATE OR REPLACE function fnc_copy_table_info_redshift(p_id integer, p_folder varchar)
   RETURNS text AS
 $BODY$
@@ -188,6 +188,7 @@ DECLARE
 	v_comando varchar;
 	v_clone varchar;
 	v_separador varchar;
+	v_constrain varchar;
 
 BEGIN
 	v_index = 0;
@@ -202,8 +203,18 @@ BEGIN
 		from temporal.tables_load
 		where id = p_id;
 
+		v_constrain = 'NA';
 		v_clone = CASE WHEN registro.tabla in ('categories','chain_products', 'factors') THEN '1' ELSE '0' END;
 		v_separador = CASE WHEN registro.tabla in ('chains_views') THEN '1' ELSE '0' END;
+
+		if registro.tabla in ('sales') then
+			SELECT constraint_name into v_constrain
+			FROM information_schema.table_constraints 
+			WHERE 
+				table_name = registro.tabla and 
+				constraint_schema = registro.esquema and 
+			constraint_type = 'PRIMARY KEY' ;			
+		end if;
 	
 		drop table if exists tmp_record;
 		CREATE temp TABLE tmp_record  (
@@ -212,7 +223,7 @@ BEGIN
 	
 		v_estado = 'CARGADA';
 	    v_columns = generate_ddl_columns_table(registro.esquema, registro.tabla);
-		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| v_clone ||' '|| p_folder ||' '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" '|| v_separador ||' ';
+		v_comando = '/home/postgres/table_redshift_to_alloydb.sh '|| v_clone ||' '|| p_folder ||' '|| registro.esquema ||' '|| registro.tabla ||' "'|| v_columns ||'" '|| v_separador ||' "'|| v_constrain || '" ';
 		v_sql = 'COPY tmp_record FROM PROGRAM ''' || v_comando || '''';
 					
 		BEGIN
@@ -282,7 +293,8 @@ begin
         temporal.tables_load b
     where
 		tabla = 'sales' and
-        estado = 'PROCESANDO';
+        estado = 'PROCESANDO' and 
+		redshift_count > 100000000;
 	
 	OPEN cursor_tablas;
     FETCH cursor_tablas INTO registro;
@@ -293,7 +305,7 @@ begin
 				temporal.tables_load a,
 				temporal.tables_foreing b
 			where 
-				a.estado = 'PENDIENTE' and 
+				a.estado IN ('PENDIENTE','PROCESANDO') and 
 				registro.id = b.id and
 				b.id_foranea = a.id ;
 		
@@ -463,3 +475,6 @@ select * from fnc_create_schema_depency();
 select * from fnc_set_primary_key('categories');
 select * from fnc_set_primary_key('factors');
 select * from fnc_set_primary_key('chain_products');
+
+
+

@@ -5,6 +5,7 @@ SCHEMA=$3
 TABLE=$4
 COLUMN=$5
 SEP=$6
+CONSTRAIN=$7
 FILE=${SCHEMA}_${TABLE}
 
 FOLDER_POSTGRES="/home/postgres"
@@ -70,7 +71,17 @@ if [ -s "$FOLDER_TABLES/$FILE" ]; then
   fi
 
   export PGPASSWORD="$ALLOYDB_PASSWORD"
+  # Drop constrain primary key
+  if [ "$CONSTRAIN" != "NA" ]; then
+    /usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -c "ALTER TABLE ${SCHEMA}.${TABLE} DROP CONSTRAINT ${CONSTRAIN} CASCADE" $DB
+  fi
+
   /usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB < ${FOLDER_UNLOAD}/COPY_${FILE}.sql
+
+  # Create constrain primary key
+  if [ "$CONSTRAIN" != "NA" ]; then
+    /usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -c "ALTER TABLE ${SCHEMA}.${TABLE} ADD CONSTRAINT ${CONSTRAIN} PRIMARY KEY (id)" $DB
+  fi
 
   COUNT=$(/usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -tAc "select count(1) from ${SCHEMA}.${TABLE} " $DB)
 
