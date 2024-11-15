@@ -1,14 +1,14 @@
-#Migracion datos Redshift a AlloyDB
+# Migracion datos Redshift a AlloyDB
 
 
-##Descripcion
+## Descripcion
 En la presente documentacion, se desarrolla como objetivo el explicar el funcionamiento implementado en la actual carpeta de la imagen "redshift_to_alloydb". Lo anterior explicado desde los siguientes temas:
 
 1. Backup esquema de datos
 2. Restauracion de datos
 3. Log de ejecucion del proceso
 
-###Backup base de datos
+### Backup base de datos
 Para el desarrollo de esta actividad se tomo como base el utilizar el mecanismo "pg_dump", dado a que Redshift como AlloyDB, comparten como motor base el Postgres. Con el comando "pg_dump" lo que se realiza es una generacion de un backup en texto plano y de tipo sql, que permitiera generar todos los objectos que contiene la base de datos en Redshift, sin nada de informacion.
 
 El backup generado cuenta con algunas caracteristicas que son de uso de Redshift y que por tanto Alloydb no puede interpretar, para manejar este tipo de cambios se implementa un intermediario y validador, para lo cual se monta una instancia de PostgreSQL,donde al backup de Redshift se le realizan ajustes para permitir crear el mayor numero de objetos aceptados por PostgreSQL, con estos cambios se procede a realizar un "psql" para la restauracion del sql actualizado.
@@ -23,7 +23,7 @@ Para este proceso se utilizan los mecanismo de UNLOAD y COPY, donde:
 
 Con los dos procesos anteriores, se implementa un proceso paralelizado, donde se realizan ambas acciones de generar la data en s3, proceder a copiar en GCP, por ultimo subirla AlloyDB. Como las estructura de tablas se tiene en Redshift, pero como se indico en el proceso anterior, no toda se puede migrar, se realiza un proceso para el relacionamiento de los objetos creados y sus estructuras, dado a que COPY solicita las columnas de las tablas, esto se realiza con la ayuda de la ejecucion de la funcion "fnc_create_schema_depency".
 
-###Log de ejecucion
+### Log de ejecucion
 Se espera que este proceso se ejecute dentro de GKE, por tanto el usuario no tendra visibilidad directa de acceder al estado de la ejecucion total, para ayudar con este tema se proceder a crear dos archivos de retroalimentacion:
 
 - DATABASE_DATE.log : Es un archivo que contiene cada uno de los flujos con la fecha en la cual inicio, permitiendo reconocer en donde se ha demorado mas y cuales fueron los procesos ejecutados.
@@ -31,7 +31,7 @@ Se espera que este proceso se ejecute dentro de GKE, por tanto el usuario no ten
 
 Ademas dentro de estos se adjuntan los archivos SQL de los backups generados, tanto desde Redshift como el del Postgres a AlloyDB.
 
-##Estructura de archivos
+## Estructura de archivos
 Los siguientes son los archivos implementados para el desarrollo de las actividades mencionadas anteriormente:
 - **Keys** : En esta carpeta se encuentran las llaves de acceso, que fueron creadas para permitir que la instancia que se cree con esta imagen se pueda conectar via ssh con la instancia que sirve para acceder a Redshift.
 - **pg_hba** : Archivo con la configuracion de accesos, el cual le permite al usuario postgres acceder via local, sin autenticacion.
@@ -53,13 +53,13 @@ Los siguientes son los archivos implementados para el desarrollo de las activida
   - **Retroalimentacion**: Se procede a generar los archivos de Logs y se envian al Bucket.
 
 
-####Funciones PLSQL
+#### Funciones PLSQL
 Estas son creadas atraves del llamado al archivo "schema_temporal.sql", dentro de esto se tiene:
 - **generate_create_table_statement** : Permite generar el SQL de create de una tabla.
 - generate_ddl_columns_table : Permite consulta el listado de las columnas que contiene una tabla, este es usado para el proceso de COPY.
 - **fnc_create_schema_depency** : Cuenta con el proceso para reconocer las tablas creadas y sus respectivas foraneas, permitiendo asi conocer las relaciones entre las distintas tablas de toda la base de datos.
 - **fnc_copy_table_info_redshift** : Es la funcion encargada de realizar el proceso de carga de Redshift a AlloyDB, esto lo hace en conjunto con el archivo "table_redshift_to_alloydb.sh". Cuenta ademas con la verificacion de que tablas, se les tiene realizar el mecanismo de distinct para datos duplicados en llaves primaria y que tables se deben ajustar para intercambiar el separador, siendo 0='}' y 1='|'. 
-- **fnc_get_load_table** : Como son muchas tablas  el proceso debe cargarlas segun su dependencia, esta funcion se encarga de devolver la tabla que puede ser cargada y que no generar conflicto por dependencias de foraneas.
+- **fnc_get_load_table** : Como son muchas tablas  el proceso debe cargarlas segun su dependencia, esta funcion se encarga de devolver la tabla que puede ser cargada y que no generar conflicto por dependencias de foraneas. Para no generar una sobrecarga sobre AlloyDB, se realiza una validacion para rectificar que no existan mas de 4 cargas de tablas sales con un mayor de registros a cargar de 100 millones.
 - **fnc_set_primary_key** : Funcion encargada de eliminar constrain de llave primario, esto por motivo que las tablas asociados a errores de duplicidad, se cargan dentro del ambiente de transiccion y luego se realiza un distinct, para solo devolver los datos sin duplicidad.
 - **fnc_set_constraint** : Funcion creada para eliminar constrain especificas de unas tablas, dado a que generan errores de integridad al tener datos en la tabla, que no estan en la tabla asociada.
 
@@ -71,7 +71,17 @@ Para mitigar ciertos errores en el proceso, se realizan la implementacion de con
 - **Conteo vacio o nulo** : En la solicitud de carga, se realiza un llamado a Redshift para validar el numero de registros de la tabla, en caso de ser 0 se toma como vacio, pero si se presenta un error en la conexion y el resultado es vacio se toma como error la carga.
 - **Datos duplicados** : se implemento proceso para generar u distinct sobre las tablas(categories, sales, factors), para solo generar los datos unicos, por motivo que existen relaciones de datos en esta tablas donde dos registros identicos existen.
 
-##Notas
+## Retroalimentacion
+El proceso al terminar cuenta con una retroalimentacion de todo el proceso ejecutado durante su inicio y final, estas retroalimentacion se deja dentro del Bucket de GCP, donde se crea una carpeta con el nombre de la base de datos que se migra y la otra carpeta con la fecha de ejecucion. Dentro de esta carpeta se dejan archivos con el mismo nombre de la base de datos, los cuales son:
+- **$DB.sql** : Archivo del backup que se solicito Redshift.
+- **$DB_local.sql** : Archivo del backup que se genera dentro del servicio de Postgres que sirve de intermediarion y con el cual se proceder a restaurar en AlloyDB.
+- **$DB_DATETIME.log** : Archivo que contiene la lista de los pasos que fueron ejecutados con el tiempo de ejecucion.
+- **$DB_DATETIME.tables** : Contiene la lista de las tablas que fueron migradas durante la ejecucion, con los tiempos de inicio, fin, estado en el cual quedo, como tambien el numero de registros que contiene en Redshift y que quedaron en AlloyDB. e espera que el proceso se realice de forma correcta, dejando solo en estado registros con :
+  - **VACIO** : La tabla en Redshift no tiene datos, por tanto no se ejecuta el proceso de carga a AlloyDB.
+  - **CARGADA** : La informacion registrada de la tabla fue copiada y contiene el mismo numero de registros en ambos servicios.
+
+
+## Notas
 - En esta documentacion se entrega las llaves publica y privadas, la privada para este proceso es cargada por llaves secretas en el GKE, se puede crear a traves del comando "kubectl create secret generic acceso-vpn -n argo --from-file=key=key"
 - Las llave publica se debe contenedor dentro del usuario Ubuntu de la instancia de VPN.
 - Para el uso de los servicios de Postgres, en la instancia de VPN durante pruebas se usa la version 12, mientras que para la instancia de GKE se instala una version 16.
