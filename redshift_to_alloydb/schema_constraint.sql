@@ -58,5 +58,4 @@ select * from public.fnc_set_constraint('stock', 'stock_combi_geo_id_fkey');
 select * from public.fnc_set_constraint('sales', 'sales_category_id_fkey');
 select * from public.fnc_set_constraint('sales', 'sales_chain_prod_id_fkey');
 select * from public.fnc_set_constraint('sales', 'sales_combi_geo_id_fkey');
-select * from public.fnc_set_constraint('sales', 'sales_pkey');
 select * from public.fnc_set_constraint('stock_lost_sales', 'stock_lost_sales_stock_id_fkey');

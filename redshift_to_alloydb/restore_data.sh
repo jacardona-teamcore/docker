@@ -170,7 +170,7 @@ else
     if [[ "$SCHEMAS" == "NA"  ||  "$COUNT" -eq 0 ]] ; then
         createdb -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB
     elif [ "$SCHEMAS" != "NA" ] ; then
-        psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -c "DROP SCHEMA IF EXISTS ${SCHEMAS}" $DB
+        psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -c "DROP SCHEMA IF EXISTS ${SCHEMAS} CASCADE" $DB
     fi
 
     echo "$(date) : restore database in alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
