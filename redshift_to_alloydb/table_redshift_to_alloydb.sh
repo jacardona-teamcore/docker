@@ -59,14 +59,17 @@ if [ -s "$FOLDER_TABLES/$FILE" ]; then
   SEPARATOR="}"
 
   if [ $SEP -eq 1 ]; then
-        SEPARATOR="|"
+    SEPARATOR="|"
   fi
 
   COPY="\\COPY ${SCHEMA}.${TABLE}(${COLUMN}) FROM '${FOLDER_TABLES}/${FILE}' DELIMITER '${SEPARATOR}' NULL AS 'null'"
   
-  if [[ "$SCHEMAS" != "NA" ] && [ "$SCHEMA" == "public" ]]; then
-    COPY="${COPY} WHERE (id) not in (select id from ${SCHEMA}.${TABLE})"
+  if [ "$SCHEMAS" != "NA" ] && [ "$SCHEMA" == "public" ]; then
+    ID=$(/usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -tAc "select max(id) from ${SCHEMA}.${TABLE} " $DB)
+    COPY="${COPY} WHERE id > $ID"
   fi
+
+  echo ${COPY} > ${FOLDER_UNLOAD}/COPY_${FILE}.sql
 
   if [[ ${CLONE} -eq 1 ]]; then
     /usr/bin/psql -h localhost -p 5432 -U postgres ${DB} < ${FOLDER_UNLOAD}/COPY_${FILE}.sql
