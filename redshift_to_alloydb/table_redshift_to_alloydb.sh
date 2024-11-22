@@ -66,7 +66,11 @@ if [ -s "$FOLDER_TABLES/$FILE" ]; then
   
   if [ "$SCHEMAS" != "NA" ] && [ "$SCHEMA" == "public" ]; then
     ID=$(/usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -tAc "select max(id) from ${SCHEMA}.${TABLE} " $DB)
-    COPY="${COPY} WHERE id > $ID"
+    if [ -z ${ID} ]; then
+      echo "ID Nulo"
+    else
+      COPY="${COPY} WHERE id > $ID"
+    fi
   fi
 
   echo ${COPY} > ${FOLDER_UNLOAD}/COPY_${FILE}.sql
