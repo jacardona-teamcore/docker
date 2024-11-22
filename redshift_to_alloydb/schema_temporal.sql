@@ -471,6 +471,56 @@ END;
 $function$
 ;
 
+drop FUNCTION public.fnc_set_load_tables(p_max integer);
+CREATE OR REPLACE FUNCTION public.fnc_set_load_tables(p_max integer)
+ RETURNS SETOF integer
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+
+    registro record;
+	v_query varchar;
+	v_return integer;
+
+
+
+begin
+
+	v_return = 0;
+	
+	CREATE temp TABLE tmp_record  as
+	select 
+		cliente,
+		fecha,
+		ROW_NUMBER() OVER (PARTITION BY cliente ORDER BY fecha DESC) as posicion,
+		'S' as cargar
+	from
+	    (select distinct 
+	    	split_part(esquema, '_', -1) as fecha, 
+	    	replace(esquema, '_'|| split_part(esquema, '_', -1), '') as cliente 
+	    	from temporal.tables_load 
+		) as consu
+	   ;
+
+	update tmp_record set
+		cargar = 'N'
+	where 
+		posicion > p_max;
+
+	update temporal.tables_load a set
+		estado = 'NO CARGADO'
+	from 
+		tmp_record b
+	where 
+		b.cargar = 'N' and
+		a.esquema = b.cliente || '_' || b.fecha;
+
+	return next v_return;
+
+END;
+$function$
+;
+
 select * from fnc_create_schema_depency();
 select * from fnc_set_primary_key('categories');
 select * from fnc_set_primary_key('factors');

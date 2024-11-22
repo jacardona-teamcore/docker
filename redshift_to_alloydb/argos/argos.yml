@@ -29,7 +29,7 @@ spec:
     container:
       image: "us-east1-docker.pkg.dev/teamcore-architecture360/restore/instance_redshift_pg_alloydb:1.9"
       command: ['/home/restore_data.sh']
-      args: ['NAME_DB','REDSHIFT_IP','REDSHIFT_PORT','REDSHIFT_USER','REDSHIFT_PWD','ALLOYDB_IP','ALLOYDB_PORT','ALLOYDB_USER','ALLOYDB_PWD','BUCKET_S3','BUCKET_GCP','CREDENCIAL_S3_UNLOAD','VPN_IP','MAX_CYCLES']
+      args: ['NAME_DB','REDSHIFT_IP','REDSHIFT_PORT','REDSHIFT_USER','REDSHIFT_PWD','ALLOYDB_IP','ALLOYDB_PORT','ALLOYDB_USER','ALLOYDB_PWD','BUCKET_S3','BUCKET_GCP','CREDENCIAL_S3_UNLOAD','VPN_IP','MAX_CYCLES','MAX_DUPLICATION','SCHEMAS']
       volumeMounts:
       - name: acceso-vpn
         mountPath: /home/vpn/

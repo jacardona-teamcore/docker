@@ -6,6 +6,7 @@ TABLE=$4
 COLUMN=$5
 SEP=$6
 CONSTRAIN=$7
+ID_TABLE=0
 FILE=${SCHEMA}_${TABLE}
 
 FOLDER_POSTGRES="/home/postgres"
@@ -15,6 +16,7 @@ export $(xargs <$FOLDER_POSTGRES/parameters_cnx.sh)
 # Configuración de S3 y GCS
 FOLDER_UNLOAD="$FOLDER_POSTGRES/unload/${FOLDER}"
 FOLDER_TABLES="$FOLDER_POSTGRES/tables"
+export PGPASSWORD="$ALLOYDB_PASSWORD"
 
 rm -rf $FOLDER_UNLOAD
 mkdir -p $FOLDER_UNLOAD
@@ -31,7 +33,7 @@ mkdir -p $FOLDER_POSTGRES/migration
 
 # Ejecutar la consulta
 echo "execute remote... ${SCHEMA}.${TABLE} ..."
-ssh -o "StrictHostKeyChecking no" -i $FOLDER_POSTGRES/key $USERREMOTO@$INSTANCEVPN "$FOLDER_REMOTO/unload_redshift.sh $FOLDER $SCHEMA $TABLE $FOLDER_REMOTO/$FILEPARAMETERS $SEP"
+ssh -o "StrictHostKeyChecking no" -i $FOLDER_POSTGRES/key $USERREMOTO@$INSTANCEVPN "$FOLDER_REMOTO/unload_redshift.sh $FOLDER $SCHEMA $TABLE $FOLDER_REMOTO/$FILEPARAMETERS $SEP ${ID_TABLE}"
 
 echo "sync s3... ${SCHEMA}.${TABLE} ..."
 /usr/local/bin/aws s3 sync $S3_BUCKET_BASE/$DB/$FOLDER/ $FOLDER_UNLOAD --quiet
@@ -61,16 +63,18 @@ if [ -s "$FOLDER_TABLES/$FILE" ]; then
   fi
 
   COPY="\\COPY ${SCHEMA}.${TABLE}(${COLUMN}) FROM '${FOLDER_TABLES}/${FILE}' DELIMITER '${SEPARATOR}' NULL AS 'null'"
-  echo $COPY > COPY_${FILE}.sql
+  
+  if [[ "$SCHEMAS" != "NA" ] && [ "$SCHEMA" == "public" ]]; then
+    COPY="${COPY} WHERE (id) not in (select id from ${SCHEMA}.${TABLE})"
+  fi
 
   if [[ ${CLONE} -eq 1 ]]; then
     /usr/bin/psql -h localhost -p 5432 -U postgres ${DB} < ${FOLDER_UNLOAD}/COPY_${FILE}.sql
-
     rm -f ${FOLDER_TABLES}/${FILE}
-    /usr/bin/psql -h localhost -p 5432 -U postgres -c "\\copy (select distinct * from ${SCHEMA}.${TABLE}) TO '${FOLDER_TABLES}/${FILE}' DELIMITER '}' NULL AS 'null';" $DB
+
+    /usr/bin/psql -h localhost -p 5432 -U postgres -c "\\copy (select distinct * from ${SCHEMA}.${TABLE}) TO '${FOLDER_TABLES}/${FILE}' DELIMITER '}' NULL AS 'null';" $DB 
   fi
 
-  export PGPASSWORD="$ALLOYDB_PASSWORD"
   # Drop constrain primary key
   if [ "$CONSTRAIN" != "NA" ]; then
     /usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -c "ALTER TABLE ${SCHEMA}.${TABLE} DROP CONSTRAINT ${CONSTRAIN} CASCADE" $DB

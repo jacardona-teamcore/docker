@@ -14,6 +14,8 @@ GCS_BUCKET=${11}
 IAM_ROLE=${12}
 INSTANCEVPN=${13}
 MAX=${14}
+MAX_DUPLICATION=${15}
+SCHEMAS=${16}
 
 DATETIME=$(date +"%Y%m%d%H%M%S")
 FILEPARAMETERS="${DB}_${DATETIME}"
@@ -23,6 +25,7 @@ FOLDER_BACKUP="$FOLDER_POSTGRES/backup"
 USERREMOTO="ubuntu"
 KEY="/home/vpn/key"
 FILELOG=${DB}_${DATETIME}
+OPTS_SCHEMA=""
 
 cp $KEY /home/.
 KEY="/home/key"
@@ -46,7 +49,7 @@ export PGPASSWORD=$ALLOYDB_PASSWORD
 psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -lqt | cut -d \| -f 1 | grep "${DB} " | wc -l > ${FOLDER_POSTGRES}/database.count
 COUNT=$(cat ${FOLDER_POSTGRES}/database.count);
 
-if [ "$COUNT" -eq 1 ]; then
+if [[ "$COUNT" -eq 1  &&  "$SCHEMAS" == "NA" ]]; then
     echo "$(date) : La ${DB} existe en AlloyDB no se ejecuto el proceso " >> ${FOLDER_POSTGRES}/${FILELOG}.log
 else
 
@@ -81,6 +84,7 @@ else
     echo "export FOLDER_REMOTO=$FOLDER_REMOTO" >> $FOLDER_POSTGRES/parameters_cnx.sh
     echo "export USERREMOTO=$USERREMOTO" >> $FOLDER_POSTGRES/parameters_cnx.sh
     echo "export INSTANCEVPN=$INSTANCEVPN" >> $FOLDER_POSTGRES/parameters_cnx.sh
+    echo "export SCHEMAS=$SCHEMAS" >> $FOLDER_POSTGRES/parameters_cnx.sh
     chmod +x $FOLDER_POSTGRES/*.sh
 
     echo "$(date) : send file parameters" >> ${FOLDER_POSTGRES}/${FILELOG}.log
@@ -113,7 +117,13 @@ else
     sleep 10
 
     echo "$(date) : create pg_dump REDSHIT" >> ${FOLDER_POSTGRES}/${FILELOG}.log
-    ssh -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN "PGPASSWORD=$REDSHIFT_PASSWORD pg_dump -U $REDSHIFT_USER -h $REDSHIFT_IP -p $REDSHIFT_PORT --format=plain -s --no-synchronized-snapshots -f $FOLDER_REMOTO/$DB.sql $DB"
+    if [[ "$SCHEMAS" != "NA"  &&  "$COUNT" -eq 0 ]] ; then
+        OPTS_SCHEMA="-n ${SCHEMAS} -n public -n dba_views"
+    elif [ "$SCHEMAS" != "NA" ] ; then
+        OPTS_SCHEMA="-n ${SCHEMAS} -n public"
+    fi  
+
+    ssh -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN "PGPASSWORD=$REDSHIFT_PASSWORD pg_dump -U $REDSHIFT_USER -h $REDSHIFT_IP -p $REDSHIFT_PORT ${OPTS_SCHEMA} --format=plain -s --no-synchronized-snapshots -f $FOLDER_REMOTO/$DB.sql $DB"
     scp -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN:$FOLDER_REMOTO/$DB.sql $FOLDER_BACKUP/$DB.sql
     echo "$(date) : ajustando pg_dump REDSHIT" >> ${FOLDER_POSTGRES}/${DB}.log
     sed -i "s/DEFAULT \"identity\"([0-9]\+, [0-9]\+, '1,1'::text) NOT NULL/ /g"  $FOLDER_BACKUP/$DB.sql
@@ -138,16 +148,28 @@ else
     su postgres -c "psql -h localhost -p 5432 -U postgres $DB < $FOLDER_POSTGRES/schema_constraint.sql"
 
     echo "$(date) : create backup local" >> ${FOLDER_POSTGRES}/${FILELOG}.log
-    su postgres -c "pg_dump -U postgres -h localhost -p 5432  --format=plain -s -f $FOLDER_BACKUP/${DB}_local.sql $DB"
+    if [[ "$SCHEMAS" != "NA"  &&  "$COUNT" -eq 0 ]] ; then
+        OPTS_SCHEMA=""
+    elif [ "$SCHEMAS" != "NA" ] ; then
+        OPTS_SCHEMA="-n ${SCHEMAS}"
+    fi  
+
+    su postgres -c "pg_dump -U postgres -h localhost -p 5432 ${OPTS_SCHEMA} --format=plain -s -f $FOLDER_BACKUP/${DB}_local.sql $DB"
 
     gsutil cp ${FOLDER_BACKUP}/${DB}_local.sql ${GCS_BUCKET}/${DB}/${DATETIME}/${DB}_local.sql
 
     echo "$(date) : create schema temporal local" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "psql -h localhost -p 5432 -U postgres $DB < $FOLDER_POSTGRES/schema_temporal.sql"
 
+    echo "$(date) : Change schema temporal of load tables" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+    su postgres -c "psql -h localhost -p 5432 -U postgres -c \"select * from public.fnc_set_load_tables(${MAX_DUPLICATION})\" $DB"
+
     echo "$(date) : create database in alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     export PGPASSWORD=$ALLOYDB_PASSWORD
-    createdb -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB
+
+    if [[ "$SCHEMAS" == "NA"  ||  "$COUNT" -eq 0 ]] ; then
+        createdb -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB
+    fi
 
     echo "$(date) : restore database in alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB < $FOLDER_BACKUP/${DB}_local.sql

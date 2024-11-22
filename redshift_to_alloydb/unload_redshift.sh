@@ -12,7 +12,7 @@ if [ $SEP -eq 1 ]; then
         SEPARATOR="|"
 fi
 
-QUERY="UNLOAD ('SELECT * FROM ${SCHEMA}.${TABLE}')
+QUERY="UNLOAD ('SELECT * FROM ${SCHEMA}.${TABLE}' )
   TO '${S3_BUCKET_BASE}/${DB}/${FOLDER}/'
   CREDENTIALS 'aws_iam_role=${IAM_ROLE}'
   CLEANPATH

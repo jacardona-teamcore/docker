@@ -8,14 +8,29 @@ En la presente documentacion, se desarrolla como objetivo el explicar el funcion
 2. Restauracion de datos
 3. Log de ejecucion del proceso
 
-### Backup base de datos
+## Diagrama de Flujo
+
+![Estructura de Relacionamiento](image/diagrama_flujo.png)
+
+El flujo de la imagen se desarrollo como se presenta en la imagen, donde se tienen dos ramas y estas son separadas en el momento de si existe la base de datos o no en AlloyDB. De existir la base de datos, el proceso actualmente no realiza ningun tipo de accion.
+
+En caso contrario el mecanismo realiza los siguientes procesos :
+1. Generacion backup Redshift : Solicita la generacion del esquema de objetos en Redshift.
+2. Ajuste Backup : Realiza los debidos ajustes para permitir crear algunos objetos, dado a que existen tipos o variables que postgres no puede interpretar.
+3. Restauracion Redshift Local : Proceder a restaurar el backup en el Postgres del contenedor.
+4. Generacion del backup Local : Proceder a generar un nuevo backup desde la instancia del postgres que tiene el contenedor.
+5. Proceso de cargas : Procede a ejecutar los comandos SQL, que permite crear el esquema temporal y las tablas, para tener las asociones y dependencias entre las tablas, permitiendo con esto tener un orden y prioridades para la ejecucion de la carga.
+6. Restauracion local en AlloyDB : Proceder a restaurar el backup generado del Postgres del contenedor.
+7. Transferencia de Datos : Procede a realizar un ciclo, donde se ejecuta la carga por cada una de las tablas de Redshift a AlloyDB, que fueron restauradas en el Postgres Local.
+
+## Backup base de datos
 Para el desarrollo de esta actividad se tomo como base el utilizar el mecanismo "pg_dump", dado a que Redshift como AlloyDB, comparten como motor base el Postgres. Con el comando "pg_dump" lo que se realiza es una generacion de un backup en texto plano y de tipo sql, que permitiera generar todos los objectos que contiene la base de datos en Redshift, sin nada de informacion.
 
 El backup generado cuenta con algunas caracteristicas que son de uso de Redshift y que por tanto Alloydb no puede interpretar, para manejar este tipo de cambios se implementa un intermediario y validador, para lo cual se monta una instancia de PostgreSQL,donde al backup de Redshift se le realizan ajustes para permitir crear el mayor numero de objetos aceptados por PostgreSQL, con estos cambios se procede a realizar un "psql" para la restauracion del sql actualizado.
 
 Con la instancia de PostgreSQL, se procede a generar un nuevo Backup, pero este ya solo con los objetos que son soportados por PostgreSQL y que pueden ser transferidos AlloyDB. De igual forma se usa el comando "psql" para conectar y restaurar el archivo nuevo en la base de datos destino de AlloyDB.
 
-### Restauracion de datos
+## Restauracion de datos
 Para este proceso se utilizan los mecanismo de UNLOAD y COPY, donde:
 
 - UNLOAD : Proceso implementado por AWS para permitir en Redshift generar una copia completa de una data de una tabla y exportarla en distintos formatos hacia un almacenamiento en S3.
@@ -23,7 +38,7 @@ Para este proceso se utilizan los mecanismo de UNLOAD y COPY, donde:
 
 Con los dos procesos anteriores, se implementa un proceso paralelizado, donde se realizan ambas acciones de generar la data en s3, proceder a copiar en GCP, por ultimo subirla AlloyDB. Como las estructura de tablas se tiene en Redshift, pero como se indico en el proceso anterior, no toda se puede migrar, se realiza un proceso para el relacionamiento de los objetos creados y sus estructuras, dado a que COPY solicita las columnas de las tablas, esto se realiza con la ayuda de la ejecucion de la funcion "fnc_create_schema_depency".
 
-### Log de ejecucion
+## Log de ejecucion
 Se espera que este proceso se ejecute dentro de GKE, por tanto el usuario no tendra visibilidad directa de acceder al estado de la ejecucion total, para ayudar con este tema se proceder a crear dos archivos de retroalimentacion:
 
 - DATABASE_DATE.log : Es un archivo que contiene cada uno de los flujos con la fecha en la cual inicio, permitiendo reconocer en donde se ha demorado mas y cuales fueron los procesos ejecutados.
@@ -44,16 +59,16 @@ Los siguientes son los archivos implementados para el desarrollo de las activida
  - **Generacion de datos**: Procede a realizar la solicitud de UNLOAD, el cual genera unos archivos de formato gz  particionados en un bucket de S3, por lo cual se proceden a descagar, concatenar y descomprimir, permitiendo obtener el archivo CSV.
  - **Carga de datos**: Procede a crear un SQL de carga de COPY con el archivo CSV, para luego a traves de psql conectar AlloyDB y ejecutar el SQL generado.
 - **restore_data.sh** : Es el comando solicitado para ser ejecutado por el ENTRYPOINT, donde se reciben los parametros globales para la ejecucion y empiza a realizar las siguientes actividades:
- -  **Instalaciones** : Se procede a realizar la instalacion del servicio de Postgresql y su usuario.
- - **Ajustar ambiente** : Se encarga de copiar los archivos necesarios de los procesos a utilizar dentro del usuario postgres, otorgando tambien los accesos a la instancia de vpn de Redshift
- - **Backup Redshift**: Genera la solicitud del Backup en Redsfhit, para a continuacion proceder a ejecutar unos reemplazos en el archivos, para permitir cambiar ciertas estructuras del DDL que no son posibles de ejecutar en Postgres, pero que se les puede generar un codigo que simula la misma accion.
- - **Restaracion y Backup Local** : Se procede a restaurar el backup ajustado dentro de la instancia del Postgres, para a continuacion generar un nuevo backup desde la instancia local, para ser utilizado en AlloyDB.
+  - **Instalaciones** : Se procede a realizar la instalacion del servicio de Postgresql y su usuario.
+  - **Ajustar ambiente** : Se encarga de copiar los archivos necesarios de los procesos a utilizar dentro del usuario postgres, otorgando tambien los accesos a la instancia de vpn de Redshift
+  - **Backup Redshift**: Genera la solicitud del Backup en Redsfhit, para a continuacion proceder a ejecutar unos reemplazos en el archivos, para permitir cambiar ciertas estructuras del DDL que no son posibles de ejecutar en Postgres, pero que se les puede generar un codigo que simula la misma accion.
+  - **Restaracion y Backup Local** : Se procede a restaurar el backup ajustado dentro de la instancia del Postgres, para a continuacion generar un nuevo backup desde la instancia local, para ser utilizado en AlloyDB.
   - **Esquema temporal**: Se procede a ejecutar el SQL de esquema temporal, donde se contiene los mecanismos de relacionamiento de tablas.
   - **Restauracion de datos**: Se procede a llevar acabo la ejecucion de las restauracion de todas las tablas que lograron ser restauradas en el Postgresql, para este proceso se realiaza un ciclo, donde se esta validando que se ejecuta mientras el conteo de registro indique que existen por cargar tabla, en caso de ser esto aceptado procede a llamar al comando "restore_cycle_tables.sh".
   - **Retroalimentacion**: Se procede a generar los archivos de Logs y se envian al Bucket.
 
 
-#### Funciones PLSQL
+## Funciones PLSQL
 Estas son creadas atraves del llamado al archivo "schema_temporal.sql", dentro de esto se tiene:
 - **generate_create_table_statement** : Permite generar el SQL de create de una tabla.
 - generate_ddl_columns_table : Permite consulta el listado de las columnas que contiene una tabla, este es usado para el proceso de COPY.
@@ -80,6 +95,21 @@ El proceso al terminar cuenta con una retroalimentacion de todo el proceso ejecu
   - **VACIO** : La tabla en Redshift no tiene datos, por tanto no se ejecuta el proceso de carga a AlloyDB.
   - **CARGADA** : La informacion registrada de la tabla fue copiada y contiene el mismo numero de registros en ambos servicios.
 
+## Despliegue en AWS y GCP
+
+![Estructura de Relacionamiento](image/components.png)
+
+Como se presenta en la imagen, se puede ver las relaciones entre los recursos que son necesarios para el desarrollo del proceso y de la optima ejecucion de la imagen. Dentro de los recursos se tiene :
+
+- **Redshift** : La base de datos, de la cual se va a proceder a extraer la informacion.
+- **VPC AWS** : VPC para los accesos a los recursos, que no cuentan con un acceso remoto o externo publico.
+- **Instancia Proxy** : Instancia de computo en GCP, que cuenta con un punto de acceso a la VPC de AWS, el cual le permite conectar y enviar comandos a Redshift.
+- **VPC GCP** : VPC que se tiene para interconectar los recursos internos de las instancias y servicios.
+- **AlloyDB** : Instancia de BAse de datos destino.
+- **Cluster GKE** : Cluster de servicios de Kubernete, sobre el cual se desplegara la carga del proceso.
+- **Artify Regyster** : Repositorio donde se aloja la imagen compilada.
+- **Argos** : Servicio para el despliegue de los recursos dentro de GKE y su debida eliminacion al terminar.
+
 
 ## Notas
 - En esta documentacion se entrega las llaves publica y privadas, la privada para este proceso es cargada por llaves secretas en el GKE, se puede crear a traves del comando "kubectl create secret generic acceso-vpn -n argo --from-file=key=key"
@@ -102,3 +132,4 @@ El proceso al terminar cuenta con una retroalimentacion de todo el proceso ejecu
  11. Bucket de GCP, es donde se dejaran los archivos del Log
  12. IP de la instancia de VPN que se usa para conectar a AWS
  13. Numero de ciclos que se permiten estar ejecutando para la carga de tablas.
+ 14. Maximo de esquemas permitidos por un mismo cliente
