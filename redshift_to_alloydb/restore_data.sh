@@ -164,16 +164,17 @@ else
     echo "$(date) : Change schema temporal of load tables" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     su postgres -c "psql -h localhost -p 5432 -U postgres -c \"select * from public.fnc_set_load_tables(${MAX_DUPLICATION})\" $DB"
 
-    echo "$(date) : create database in alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     export PGPASSWORD=$ALLOYDB_PASSWORD
 
     if [[ "$SCHEMAS" == "NA"  ||  "$COUNT" -eq 0 ]] ; then
+        echo "$(date) : create database in alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
         createdb -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB
     elif [ "$SCHEMAS" != "NA" ] ; then
+        echo "$(date) : delete schema ${SCHEMAS}" >> ${FOLDER_POSTGRES}/${FILELOG}.log
         psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -c "DROP SCHEMA IF EXISTS ${SCHEMAS} CASCADE" $DB
     fi
 
-    echo "$(date) : restore database in alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+    echo "$(date) : restore backup in alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log
     psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB < $FOLDER_BACKUP/${DB}_local.sql
 
     echo "$(date) : restore data redshift to alloydb" >> ${FOLDER_POSTGRES}/${FILELOG}.log

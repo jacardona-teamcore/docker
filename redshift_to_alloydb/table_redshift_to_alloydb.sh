@@ -66,7 +66,7 @@ if [ -s "$FOLDER_TABLES/$FILE" ]; then
   
   if [ "$SCHEMAS" != "NA" ] && [ "$SCHEMA" == "public" ]; then
     ID=$(/usr/bin/psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -tAc "select max(id) from ${SCHEMA}.${TABLE} " $DB)
-    if [ -z ${ID} && ${CLONE} -eq 0 ]; then
+    if [ -z ${ID} ] && [ ${CLONE} -eq 0 ]; then
       COPY="begin; truncate table ${SCHEMA}.${TABLE} cascade; ${COPY} FREEZE; commit;"
     else
       COPY="${COPY} WHERE id > $ID"
