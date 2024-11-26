@@ -25,23 +25,25 @@ mkdir -p $FOLDER_UNLOAD
 S3_PATH="${S3_BUCKET_BASE}/S3/"
 
 # Consulta UNLOAD en Redshift para cada tabla
-echo "Loading... ${SCHEMA}.${TABLE} ..."
+echo "$(date) Loading... ${SCHEMA}.${TABLE} ..."
 START_TIME=$(date +%s)
 
 rm -rf $FOLDER_POSTGRES/migration/
 mkdir -p $FOLDER_POSTGRES/migration
 
 # Ejecutar la consulta
-echo "execute remote... ${SCHEMA}.${TABLE} ..."
+echo "$(date) execute remote... ${SCHEMA}.${TABLE} ..."
 ssh -o "StrictHostKeyChecking no" -i $FOLDER_POSTGRES/key $USERREMOTO@$INSTANCEVPN "$FOLDER_REMOTO/unload_redshift.sh $FOLDER $SCHEMA $TABLE $FOLDER_REMOTO/$FILEPARAMETERS $SEP ${ID_TABLE}"
 
-echo "sync s3... ${SCHEMA}.${TABLE} ..."
+echo "$(date) sync s3... ${SCHEMA}.${TABLE} ..."
 /usr/local/bin/aws s3 sync $S3_BUCKET_BASE/$DB/$FOLDER/ $FOLDER_UNLOAD --quiet
 
-echo "descompress gz... ${SCHEMA}.${TABLE} ..."
+echo "$(date) cat zst... ${SCHEMA}.${TABLE} ..."
 cd $FOLDER_UNLOAD
-cat * > $FILE.gz
-gzip -d $FILE.gz
+cat * > $FILE.zst
+echo "$(date) start descompress zst... ${SCHEMA}.${TABLE} ..."
+unzstd $FILE.zst
+echo "$(date) end descompress zst... ${SCHEMA}.${TABLE} ..."
 
 if [ -f "$FILE" ]; then
   rm -f $FOLDER_TABLES/$FILE
@@ -53,7 +55,7 @@ fi
 mv -f $FOLDER_UNLOAD/$FILE $FOLDER_TABLES/$FILE
 
 if [ -s "$FOLDER_TABLES/$FILE" ]; then
-  echo "restore alloydb... ${SCHEMA}.${TABLE} ..."
+  echo "$(date) restore alloydb... ${SCHEMA}.${TABLE} ..."
   rm -f ${FOLDER_UNLOAD}/COPY_${FILE}.sql
 
   SEPARATOR="}"
