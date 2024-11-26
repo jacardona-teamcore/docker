@@ -10,6 +10,7 @@ NEEDRESTART_MODE=a apt install -y unzip
 NEEDRESTART_MODE=a apt install -y pip
 NEEDRESTART_MODE=a apt install -y liblz4-tool
 NEEDRESTART_MODE=a apt install -y pigz
+NEEDRESTART_MODE=a apt install -y zstd
 
 ufw allow 5432
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
