@@ -128,7 +128,7 @@ Como se presenta en la imagen, se puede ver las relaciones entre los recursos qu
  7. Puerto de acceso AlloyDB
  8. Usuario de acceso a AlloyDB
  9.  Contraseña de acceso de AlloyDB
- 10. Bucket de S3, donde se estaran generando los archivos de GZ generados por Unload
+ 10. Bucket de S3, donde se estaran generando los archivos de ZSTD generados por Unload
  11. Bucket de GCP, es donde se dejaran los archivos del Log
  12. IP de la instancia de VPN que se usa para conectar a AWS
  13. Numero de ciclos que se permiten estar ejecutando para la carga de tablas.
