@@ -54,7 +54,7 @@ if [[ "$COUNT" -eq 1  &&  "$SCHEMAS" == "NA" ]]; then
     echo "$(date) : La ${DB} existe en AlloyDB no se ejecuto el proceso " >> ${FOLDER_POSTGRES}/${FILELOG}.log
 else
 
-    if [ "$SCHEMAS" != "NA" ] ; then 
+    if [ "$SCHEMAS" != "NA" ]; then 
         SCHEMAS=$(ssh -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN "PGPASSWORD=$REDSHIFT_PASSWORD psql -U $REDSHIFT_USER -h $REDSHIFT_IP -p $REDSHIFT_PORT -tAc \"select n.nspname from pg_catalog.pg_namespace n where n.nspname = '${SCHEMAS}' or n.nspname ~ '${SCHEMAS}_[0-9]' order by 1 desc limit 1\" $DB")
     fi
 
@@ -228,19 +228,19 @@ else
             echo "$(date) : end validate load" >> ${FOLDER_POSTGRES}/${FILELOG}.log
         fi
 
-        if [ "$SCHEMAS" != "NA" ] ; then 
+        if [ "$SCHEMAS" != "NA" ]; then 
             COUNT=$(su postgres -c "$COMMAND \"${SQL}'ERROR'\" ${DB}")
 
             if [ "$COUNT" -eq 0 ]; then
                 export PGPASSWORD="$ALLOYDB_PASSWORD"
                 DELETE=$(psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -tAc "select n.nspname from pg_catalog.pg_namespace n where n.nspname = '${CUSTOM}' or n.nspname ~ '${CUSTOM}_[0-9]' order by 1 asc limit 1" $DB)
 
-                if [ -z ${DELETE} ] then
+                if [ -z ${DELETE} ]; then
                     echo "$(date) : custom ${CUSTOM} not found in history schemas AlloydDB" >> ${FOLDER_POSTGRES}/${FILELOG}.log
-                elsif [ "${SCHEMAS}" != "${DELETE}" ]; then
+                elif [ "${SCHEMAS}" != "${DELETE}" ]; then
                     echo "$(date) : custom ${CUSTOM} start delete schema ${DELETE}" >> ${FOLDER_POSTGRES}/${FILELOG}.log
                     psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -c "drop schema ${DELETE} cascade" $DB
-                end if;
+                fi
             fi
         fi    
 
