@@ -31,11 +31,6 @@ data "google_service_account" "restore_pg_arch360" {
   account_id   = var.account_service_pg
 }
 
-resource "google_compute_address" "static" {
-  name = format("%s", "${var.env}-pg-${var.region}-${var.name}")
-  region = var.region
-}
-
 resource "google_service_account_key" "sa_key" {
   service_account_id = data.google_service_account.restore_pg_arch360.name
   public_key_type    = "TYPE_X509_PEM_FILE"
@@ -75,9 +70,6 @@ resource "google_compute_instance" "db" {
   network_interface {
     network = data.google_compute_network.network.name
     subnetwork = data.google_compute_subnetwork.subnetwork.name
-    access_config {
-      nat_ip = google_compute_address.static.address
-    }
   }
 
   connection {
@@ -116,6 +108,11 @@ resource "google_compute_instance" "db" {
   provisioner "file" {
     source = "./commands/restore_db.sh"
     destination = "${var.folder_user}/restore_db.sh"
+  }
+
+  provisioner "file" {
+    source = "./configurations/authorized_keys"
+    destination = "${var.folder_user}/authorized_keys"
   }
 
   provisioner "remote-exec" {

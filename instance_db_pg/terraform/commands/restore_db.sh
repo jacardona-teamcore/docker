@@ -46,7 +46,7 @@ sudo chmod 700 -R /etc/postgresql/$VERSION/main/
 cd /var/lib/postgresql/
 sudo rm -rf $VERSION
 sudo ln -s /etc/postgresql/$VERSION/ $VERSION
-sudo chown postgres.postgres $VERSION
+sudo chown postgres:postgres $VERSION
 
 echo "$(date) : start postgres"
 sudo systemctl start postgresql

@@ -35,5 +35,14 @@ sudo cat $FOLDERUSER/postgresql_machine.conf >> /etc/postgresql/$VERSION/main/po
 sudo cp /etc/postgresql/$VERSION/main/postgresql.conf $FOLDERUSER/postgresql.conf
 sudo chown postgres:postgres /etc/postgresql/$VERSION/main/*.*
 
+sudo useradd -s /bin/false pgproxy
+sudo mkdir -p /home/pgproxy
+sudo mkdir -p /home/pgproxy/.ssh
+sudo chmod 700 /home/pgproxy/.ssh
+sudo cp $FOLDERUSER/authorized_keys /home/pgproxy/.ssh/authorized_keys
+sudo chmod 600 /home/pgproxy/.ssh/authorized_keys
+sudo chown -R pgproxy:pgproxy /home/pgproxy
+
+
 sudo systemctl start postgresql
 sleep 10
