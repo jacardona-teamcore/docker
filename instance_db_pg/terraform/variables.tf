@@ -23,3 +23,5 @@ variable "private_key"{}
 variable "folder_user"{}
 variable "version_pg"{}
 variable "account_service_pg"{}
+variable "pwd_client"{}
+variable "pwd_bouncer"{}

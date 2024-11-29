@@ -2,6 +2,8 @@ VERSION=$1
 DB=$2
 FOLDERUSER=$3
 BUCKET=$4
+PWDCLIENT=$5
+PWDBOUNCER=$6
 FOLDERRESTORE=$3/restore
 
 rm -rf $FOLDERRESTORE
@@ -50,7 +52,11 @@ sudo chown postgres:postgres $VERSION
 
 echo "$(date) : start postgres"
 sudo systemctl start postgresql
-sleep 10
+sleep 120
+
+echo "$(date) : include access user database and pgbouncer"
+sudo chmod +x /home/users_privileges.sh
+sudo su postgres -c "/home/users_privileges.sh ${DB} ${PWDCLIENT} ${PWDBOUNCER}"
 
 cd ~
 sudo rm -rf $FOLDERRESTORE

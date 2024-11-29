@@ -111,6 +111,11 @@ resource "google_compute_instance" "db" {
   }
 
   provisioner "file" {
+    source = "./commands/users_privileges.sh"
+    destination = "/home/users_privileges.sh"
+  }
+
+  provisioner "file" {
     source = "./configurations/authorized_keys"
     destination = "${var.folder_user}/authorized_keys"
   }
@@ -120,7 +125,7 @@ resource "google_compute_instance" "db" {
       "bash ${var.folder_user}/install.sh ${var.version_pg} ${var.folder_user}",
       "gcloud auth activate-service-account --key-file ${var.folder_user}/sa.json",
       "gcloud config set project ${var.project} --quiet",
-      "bash ${var.folder_user}/restore_db.sh ${var.version_pg} ${var.db_name} ${var.folder_user} ${var.bucket}",
+      "bash ${var.folder_user}/restore_db.sh ${var.version_pg} ${var.db_name} ${var.folder_user} ${var.bucket} ${var.pwd_client} ${var.pwd_bouncer}",
       "sleep 20",
       "rm -f ${var.folder_user}/sa.json"
     ]
