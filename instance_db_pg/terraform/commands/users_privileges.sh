@@ -7,14 +7,14 @@ NEW_DB_USER=${NEW_DB//_/.}
 cd "$HOME"
 
 echo "$(date) : start user db privileges"
-/usr/bin/psql -c "CREATE ROLE $NEW_DB_USER LOGIN PASSWORD '${NEW_DB_USER_PASSWORD}';"
+/usr/bin/psql -c "CREATE ROLE \"$NEW_DB_USER\" LOGIN PASSWORD '${NEW_DB_USER_PASSWORD}';"
 /usr/bin/psql -c "CREATE ROLE tc2;"
-/usr/bin/psql -c "GRANT tc2 TO $NEW_DB_USER;"
+/usr/bin/psql -c "GRANT tc2 TO \"$NEW_DB_USER\";"
 /usr/bin/psql -c "GRANT CONNECT ON DATABASE $NEW_DB TO tc2;"
 /usr/bin/psql -c "GRANT CONNECT ON DATABASE ${NEW_DB}_cubo TO tc2;"
 /usr/bin/psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO tc2;" -d "$NEW_DB"
 /usr/bin/psql -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO tc2;" -d "$NEW_DB"
-/usr/bin/psql -c "GRANT postgres TO $NEW_DB_USER;" -d "$NEW_DB"
+/usr/bin/psql -c "GRANT postgres TO \"$NEW_DB_USER\";" -d "$NEW_DB"
 
 /usr/bin/psql -c "CREATE ROLE pgbouncer WITH LOGIN PASSWORD '${PG_BOUNCER_PASSWORD}';"
 /usr/bin/psql -c "CREATE SCHEMA pgbouncer AUTHORIZATION pgbouncer;" -d "$NEW_DB"
