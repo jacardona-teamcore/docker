@@ -4,6 +4,7 @@ echo "setting keys ..."
 eval "$(ssh-agent -s)"
 ssh-add /app/.ssh/id_rsa
 BUCKET_STATUS=$1
+INSTANCE=$2
 VARIABLES=$2
 FOLDERTERRAFORM="/app/terraform"
 
@@ -22,6 +23,9 @@ val1='bucket="'
 val2='"'
 complete="$val1$BUCKET_STATUS$val2"
 echo "$complete" > $FOLDERTERRAFORM/backend.config
+val1='prefix="'
+complete="$val1$INSTANCE$val2"
+echo "$complete" >> $FOLDERTERRAFORM/backend.config
 
 echo "$(date) : service account"
 gcloud auth list

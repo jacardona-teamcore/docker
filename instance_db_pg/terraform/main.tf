@@ -1,6 +1,5 @@
 terraform {
   backend "gcs" {
-    prefix = "tc_arch360_restore"
   }
   required_providers {
     google = {
