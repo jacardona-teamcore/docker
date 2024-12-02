@@ -46,7 +46,7 @@ resource "local_file" "sa_json" {
 }
 
 resource "google_compute_address" "address_instance" {
-  name         = "${var.name}-${var.region}-address-internal"
+  name         = "${var.name}-${var.region}-address"
   subnetwork   = data.google_compute_subnetwork.subnetwork.id
   region       = data.google_compute_subnetwork.subnetwork.region
   address_type = "INTERNAL"
@@ -81,18 +81,7 @@ resource "google_compute_instance" "db" {
   network_interface {
     network = data.google_compute_network.network.name
     subnetwork = data.google_compute_subnetwork.subnetwork.name
-
-    access_config {
-      nat_ip = google_compute_address.address_instance.address
-    }
-  }
-
-  connection {
-    type  = "ssh"
-    port  = 22
-    user  = "ubuntu"
-    agent = "true"
-    host  = google_compute_instance.db.network_interface.0.access_config.0.nat_ip
+    network_ip = google_compute_address.address_instance.address
   }
 
   service_account {
