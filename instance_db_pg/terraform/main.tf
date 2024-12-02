@@ -141,7 +141,7 @@ resource "google_compute_instance" "db" {
       "bash ${var.folder_user}/install.sh ${var.version_pg} ${var.folder_user}",
       "gcloud auth activate-service-account --key-file ${var.folder_user}/sa.json",
       "gcloud config set project ${var.project} --quiet",
-      "bash ${var.folder_user}/restore_db.sh ${var.version_pg} ${var.db_name} ${var.folder_user} ${var.bucket} ${var.pwd_client} ${var.pwd_bouncer}",
+      "bash ${var.folder_user}/restore_db.sh ${var.version_pg} ${var.db_name} ${var.folder_user} ${var.bucket} ${var.pwd_user_database} ${var.pwd_pgbouncer}",
       "sleep 20",
       "rm -f ${var.folder_user}/sa.json"
     ]
