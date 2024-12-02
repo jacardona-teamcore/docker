@@ -5,7 +5,7 @@ eval "$(ssh-agent -s)"
 ssh-add /app/.ssh/id_rsa
 BUCKET_STATUS=$1
 INSTANCE=$2
-VARIABLES=$2
+VARIABLES=$3
 FOLDERTERRAFORM="/app/terraform"
 
 echo "$(date) : delete files"
