@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: process-restore-db
+spec:
+  serviceAccountName: restore-pg-arch360  
+  entrypoint: main
+  templates:
+  - name: main
+    container:
+      image: "us-east1-docker.pkg.dev/teamcore-architecture360/restore/instance_db_pg:1.5"
+      command: ["/home/entrypoint.sh"]
+      args: ['tc2-dev-infra-tfstate-diageoprueba','project="teamcore-architecture360";region="us-east1";name="dev-diageoprueba";network_name="arch360-dev";subnetwork="dev-us-east1-01";machine_type="n2-standard-2";zone="us-east1-b";env="dev";size_disk="200";bucket="gs://teamcore-architecture360-backups";db_name="diageoprueba_cl";pub_key="/app/.ssh/id_rsa.pub";private_key="/app/.ssh/id_rsa";folder_user="/home/ubuntu";version_pg="16";account_service_pg="restore-pg-arch360";pwd_client="aEBjx92Pc2o87";pwd_bouncer="A2j5i73LgnhO6";private_zone="private-zone-tc2"']
+      resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4"
+      volumeMounts:
+      - name: google-cloud-key
+        mountPath: /var/key
+  volumes:
+  - name: google-cloud-key
+    projected:
+      sources:
+      - serviceAccountToken:
+          path: token
+          audience: https://oauth2.googleapis.com/token
+          expirationSeconds: 7200

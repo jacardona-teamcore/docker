@@ -31,6 +31,11 @@ data "google_service_account" "restore_pg_arch360" {
   account_id   = var.account_service_pg
 }
 
+data "google_dns_managed_zone" "private_zone" {
+  project = var.project
+  name    = var.private_zone
+}
+
 resource "google_service_account_key" "sa_key" {
   service_account_id = data.google_service_account.restore_pg_arch360.name
   public_key_type    = "TYPE_X509_PEM_FILE"
@@ -39,6 +44,13 @@ resource "google_service_account_key" "sa_key" {
 resource "local_file" "sa_json" {
   content  = base64decode(google_service_account_key.sa_key.private_key)
   filename = abspath("./${var.env}-db-${var.region}-${var.name}.json")
+}
+
+resource "google_compute_address" "address_instance" {
+  name         = "${var.env}-${var.region}-${var.db_name}-address-internal"
+  subnetwork   = data.google_compute_subnetwork.subnetwork.id
+  region       = data.google_compute_subnetwork.subnetwork.region
+  address_type = "INTERNAL"
 }
 
 resource "google_compute_instance" "db" {
@@ -70,6 +82,10 @@ resource "google_compute_instance" "db" {
   network_interface {
     network = data.google_compute_network.network.name
     subnetwork = data.google_compute_subnetwork.subnetwork.name
+
+    access_config {
+      nat_ip = google_compute_address.address_instance.address
+    }
   }
 
   connection {
@@ -130,4 +146,14 @@ resource "google_compute_instance" "db" {
       "rm -f ${var.folder_user}/sa.json"
     ]
   }
+}
+
+resource "google_dns_record_set" "database_dns" {
+  name = "pg-${var.db_name}-${var.env}.${data.google_dns_managed_zone.private_zone.dns_name}"
+  type = "A"
+  ttl  = 300
+
+  managed_zone = data.google_dns_managed_zone.private_zone.name
+
+  rrdatas = [google_compute_address.address_instance.address]
 }
