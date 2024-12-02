@@ -46,7 +46,7 @@ resource "local_file" "sa_json" {
 }
 
 resource "google_compute_address" "address_instance" {
-  name         = "${var.env}-${var.region}-${var.db_name}-address-internal"
+  name         = "${var.name}-${var.region}-address-internal"
   subnetwork   = data.google_compute_subnetwork.subnetwork.id
   region       = data.google_compute_subnetwork.subnetwork.region
   address_type = "INTERNAL"
@@ -148,7 +148,7 @@ resource "google_compute_instance" "db" {
 }
 
 resource "google_dns_record_set" "database_dns" {
-  name = "pg-${var.db_name}-${var.env}.${data.google_dns_managed_zone.private_zone.dns_name}"
+  name = "pg-${var.name}.${data.google_dns_managed_zone.private_zone.dns_name}"
   type = "A"
   ttl  = 300
 
