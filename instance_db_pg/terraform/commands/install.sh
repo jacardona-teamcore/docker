@@ -31,9 +31,9 @@ sleep 5
 
 sudo rm -f /etc/postgresql/$VERSION/main/pg_hba.conf
 sudo cp $FOLDERUSER/pg_hba.conf /etc/postgresql/$VERSION/main/pg_hba.conf
-sudo cat $FOLDERUSER/postgresql_machine.conf >> /etc/postgresql/$VERSION/main/postgresql.conf
-sudo cp /etc/postgresql/$VERSION/main/postgresql.conf $FOLDERUSER/postgresql.conf
 sudo chown postgres:postgres /etc/postgresql/$VERSION/main/*.*
+sudo su postgres -c "cat $FOLDERUSER/postgresql_machine.conf >> /etc/postgresql/$VERSION/main/postgresql.conf"
+sudo cp /etc/postgresql/$VERSION/main/postgresql.conf $FOLDERUSER/postgresql.conf
 
 sudo useradd -s /bin/false pgproxy
 sudo mkdir -p /home/pgproxy
