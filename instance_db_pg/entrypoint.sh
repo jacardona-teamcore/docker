@@ -37,6 +37,6 @@ echo "$(date) : terraform plan"
 terraform plan -var-file="$FOLDERTERRAFORM/terraform.tfvars"
 echo "$(date) : terraform apply"
 terraform apply -var-file="$FOLDERTERRAFORM/terraform.tfvars" -auto-approve
-sleep 1200
+sleep 300
 
 echo "$(date) : end restore database"
