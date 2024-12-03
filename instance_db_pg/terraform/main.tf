@@ -82,6 +82,18 @@ resource "google_compute_instance" "db" {
     network = data.google_compute_network.network.name
     subnetwork = data.google_compute_subnetwork.subnetwork.name
     network_ip = google_compute_address.address_instance.address
+    
+    access_config {
+      # Include this section to give the VM an external IP address
+    }
+  }
+
+  connection {
+    type  = "ssh"
+    port  = 22
+    user  = "ubuntu"
+    agent = "true"
+    host  = google_compute_instance.db.network_interface.0.access_config.0.nat_ip
   }
 
   service_account {
