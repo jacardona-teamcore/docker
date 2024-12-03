@@ -55,8 +55,8 @@ sudo systemctl start postgresql
 sleep 120
 
 echo "$(date) : include access user database and pgbouncer"
-sudo chmod +x /home/users_privileges.sh
-sudo su postgres -c "/home/users_privileges.sh ${DB} ${PWDCLIENT} ${PWDBOUNCER}"
+sudo chmod +x ${FOLDERUSER}/users_privileges.sh
+sudo su postgres -c "${FOLDERUSER}/users_privileges.sh ${DB} ${PWDCLIENT} ${PWDBOUNCER}"
 
 cd ~
 sudo rm -rf $FOLDERRESTORE

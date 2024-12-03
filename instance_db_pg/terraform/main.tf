@@ -82,7 +82,7 @@ resource "google_compute_instance" "db" {
     network = data.google_compute_network.network.name
     subnetwork = data.google_compute_subnetwork.subnetwork.name
     network_ip = google_compute_address.address_instance.address
-    
+
     access_config {
       # Include this section to give the VM an external IP address
     }
@@ -128,7 +128,7 @@ resource "google_compute_instance" "db" {
 
   provisioner "file" {
     source = "./commands/users_privileges.sh"
-    destination = "/home/users_privileges.sh"
+    destination = "${var.folder_user}/users_privileges.sh"
   }
 
   provisioner "file" {
