@@ -46,7 +46,7 @@ resource "local_file" "sa_json" {
 }
 
 resource "google_compute_address" "address_instance" {
-  name         = "${var.name}-${var.region}-address"
+  name         = "${var.env}-pg-${var.name}-${var.region}-address"
   subnetwork   = data.google_compute_subnetwork.subnetwork.id
   region       = data.google_compute_subnetwork.subnetwork.region
   address_type = "INTERNAL"
@@ -54,7 +54,7 @@ resource "google_compute_address" "address_instance" {
 
 resource "google_compute_instance" "db" {
   project = var.project
-  name = format("%s", "${var.env}-pg-${var.region}-${var.name}")
+  name = format("%s", "${var.env}-pg-${var.name}-${var.region}-instance")
 
   tags         = ["ssh", "postgresql"]
   zone         = format("%s", var.zone)
@@ -149,7 +149,7 @@ resource "google_compute_instance" "db" {
 }
 
 resource "google_dns_record_set" "database_dns" {
-  name = "pg-${var.name}.${data.google_dns_managed_zone.private_zone.dns_name}"
+  name = "${var.env}-pg-${var.name}.${data.google_dns_managed_zone.private_zone.dns_name}"
   type = "A"
   ttl  = 300
 
