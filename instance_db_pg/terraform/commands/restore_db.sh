@@ -56,7 +56,9 @@ sleep 120
 
 echo "$(date) : include access user database and pgbouncer"
 sudo chmod +x ${FOLDERUSER}/users_privileges.sh
-sudo su postgres -c "${FOLDERUSER}/users_privileges.sh ${DB} ${PWDCLIENT} ${PWDBOUNCER}"
+sudo cp ${FOLDERUSER}/users_privileges.sh /etc/postgresql/users_privileges.sh
+sudo chown postgres.postgres /etc/postgresql/users_privileges.sh
+sudo su postgres -c "/etc/postgresql/users_privileges.sh ${DB} ${PWDCLIENT} ${PWDBOUNCER}"
 
 cd ~
 sudo rm -rf $FOLDERRESTORE
