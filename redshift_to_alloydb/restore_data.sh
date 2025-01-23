@@ -125,12 +125,13 @@ else
         su postgres -c "/usr/lib/postgresql/16/bin/postgres -c config_file=/etc/postgresql/16/main/postgresql.conf &>/dev/null &"
         sleep 10
 
-        echo "$(date) : create pg_dump REDSHIT" >> ${FOLDER_POSTGRES}/${FILELOG}.log
         if [[ "$SCHEMAS" != "NA"  &&  "$COUNT" -eq 0 ]] ; then
             OPTS_SCHEMA="-n ${SCHEMAS} -n public -n dba_views"
         elif [ "$SCHEMAS" != "NA" ] ; then
             OPTS_SCHEMA="-n ${SCHEMAS} -n public"
         fi  
+
+        echo "$(date) : create pg_dump REDSHIT $OPTS_SCHEMA" >> ${FOLDER_POSTGRES}/${FILELOG}.log
 
         ssh -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN "PGPASSWORD=$REDSHIFT_PASSWORD pg_dump -U $REDSHIFT_USER -h $REDSHIFT_IP -p $REDSHIFT_PORT ${OPTS_SCHEMA} --format=plain -s --no-synchronized-snapshots -f $FOLDER_REMOTO/$DB.sql $DB"
         scp -o "StrictHostKeyChecking no" -i $KEY $USERREMOTO@$INSTANCEVPN:$FOLDER_REMOTO/$DB.sql $FOLDER_BACKUP/$DB.sql
@@ -229,17 +230,26 @@ else
             echo "$(date) : end validate load" >> ${FOLDER_POSTGRES}/${FILELOG}.log
         fi
 
+        echo "$(date) : update migration sql pgsql" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+        psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER $DB < /home/pgsql_migration.sql
+
         if [ "$SCHEMAS" != "NA" ]; then 
             COUNT=$(su postgres -c "$COMMAND \"${SQL}'ERROR'\" ${DB}")
 
             if [ "$COUNT" -eq 0 ]; then
                 export PGPASSWORD="$ALLOYDB_PASSWORD"
 
-                if [ -z ${DELETE} ]; then
-                    echo "$(date) : custom ${CUSTOM} not found in history schemas AlloydDB" >> ${FOLDER_POSTGRES}/${FILELOG}.log
-                elif [ "${SCHEMAS}" != "${DELETE}" ]; then
-                    echo "$(date) : custom ${CUSTOM} start delete schema ${DELETE}" >> ${FOLDER_POSTGRES}/${FILELOG}.log
-                    psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -c "drop schema ${DELETE} cascade" $DB
+                COUNT=$(psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -tAc "select count(1) from pg_catalog.pg_namespace n where n.nspname = '${CUSTOM}' or n.nspname ~ '${CUSTOM}_[0-9]' " $DB)
+
+                if [ "$COUNT" -gt 1 ]; then
+                    if [ -z ${DELETE} ]; then
+                        echo "$(date) : custom ${CUSTOM} not found in history schemas AlloydDB" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+                    elif [ "${SCHEMAS}" != "${DELETE}" ]; then
+                        echo "$(date) : custom ${CUSTOM} start delete schema ${DELETE}" >> ${FOLDER_POSTGRES}/${FILELOG}.log
+                        psql -h $ALLOYDB_IP -p $ALLOYDB_PORT -U $ALLOYDB_USER -c "drop schema ${DELETE} cascade" $DB
+                    fi
+                else
+                    echo "$(date) : the number schemas of ${CUSTOM} in databases AlloydDB, is minor to 1, not delete schema" >> ${FOLDER_POSTGRES}/${FILELOG}.log
                 fi
             fi
         fi    

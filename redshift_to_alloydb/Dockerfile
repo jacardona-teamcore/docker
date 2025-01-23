@@ -3,6 +3,7 @@ FROM ubuntu:latest
 ADD ./configuracion.sh /root/configuracion.sh
 ADD ./restore_data.sh /home/restore_data.sh
 ADD ./schema_temporal.sql /home/schema_temporal.sql
+ADD ./pgsql_migration.sql /home/pgsql_migration.sql
 ADD ./table_redshift_to_alloydb.sh /home/table_redshift_to_alloydb.sh
 ADD ./unload_redshift.sh /home/unload_redshift.sh
 ADD ./pg_hba.conf /home/pg_hba.conf
