@@ -1,0 +1,5 @@
+opentelemetry-distro 
+opentelemetry-instrumentation 
+opentelemetry-exporter-google-cloud
+opentelemetry-instrumentation-flask
+opentelemetry-instrumentation-requests
