@@ -1,0 +1,17 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+exporters:
+  googlecloud:
+    project: otelcol-test
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [googlecloud]
+    metrics:
+      receivers: [otlp]
+      exporters: [googlecloud]

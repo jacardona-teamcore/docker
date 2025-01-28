@@ -1,15 +1,14 @@
-from flask import Flask
-from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# Inicializar la configuración de OpenTelemetry
-import otel_config
+class MyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_header()
+        self.wfile.write("Hola")
 
-app = Flask(__name__)
-FlaskInstrumentor().instrument_app(app)
-
-@app.route("/")
-def index():
-    return "¡Hola desde una app instrumentada con OpenTelemetry!"
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+if __name__ == '__main__':
+    server_address = ('', 8080)
+    httpd = HTTPServer(server_address, MyHandler)
+    print("Servidor iniciado en el puerto 8080")
+    httpd.serve_forever()
