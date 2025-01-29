@@ -1,14 +1,19 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from fastapi import FastAPI
 
-class MyHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
-        self.end_header()
-        self.wfile.write("Hola")
+# Crear una instancia de FastAPI
+app = FastAPI()
 
-if __name__ == '__main__':
-    server_address = ('', 8080)
-    httpd = HTTPServer(server_address, MyHandler)
-    print("Servidor iniciado en el puerto 8080")
-    httpd.serve_forever()
+# Definir una ruta básica
+@app.get("/")
+def read_root():
+    return {"message": "¡Hola, mundo!"}
+
+# Definir una ruta con parámetros
+@app.get("/saludo/{nombre}")
+def saludar(nombre: str):
+    return {"message": f"¡Hola, {nombre}!"}
+
+# Definir una ruta para sumar dos números
+@app.get("/sumar")
+def sumar(a: int, b: int):
+    return {"resultado": a + b}
