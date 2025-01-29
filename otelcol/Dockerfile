@@ -17,14 +17,22 @@ ENV OTEL_ENVER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta
 # Install depency and opentelemtry
 COPY ./app/requirements.txt /tc4/requirements.txt
 COPY ./opentelemetry/requirements.txt /opentelemetry/requirements.txt
-COPY main.py /tc4/main.py
+COPY main.py /home/main.py
 
 RUN pip install --no-cache-dir --upgrade -r /tc4/requirements.txt
 RUN pip install --no-cache-dir -r /opentelemetry/requirements.txt
 RUN opentelemetry-bootstrap -a install
 
 EXPOSE 8080
-EXPOSE 4317/tcp
-EXPOSE 4318/tcp
 
-CMD ["/bin/sh", "-c", "opentelemetry-instrument --logs_exporter otlp  uvicorn main:app --reload --port 8080"]
+COPY <<EOF ./start.sh
+#!/bin/bash
+echo "Starting..."
+cd /tc4
+echo "Starting server..."
+opentelemetry-instrument --logs_exporter otlp uvicorn main:app --host 0.0.0.0 --port  8080 
+EOF
+
+RUN chmod +x ./start.sh
+
+CMD ["./start.sh"]
