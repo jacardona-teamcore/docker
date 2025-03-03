@@ -49,4 +49,5 @@ jobs:
           git config --global user.email "ci.cd@teamcore.net"
           git add CHANGELOG.md
           git commit -m "Actualiza CHANGELOG.md con los cambios del lanzamiento"
-          git push
+          echo "HEAD:${GITHUB_REF}"
+          git push origin HEAD:${GITHUB_REF}
