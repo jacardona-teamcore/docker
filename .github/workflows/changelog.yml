@@ -10,16 +10,18 @@ on:
 jobs:
   generate_changelog:
     runs-on: ubuntu-latest
+    environment: main
 
     steps:
       - name: Checkout del código
         uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Necesario para obtener el historial completo de Git
+          token: ${{ secrets.PAT }}  # Usa un PAT si el repositorio es privado
 
       - name: Generar Changelog
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT }}
         run: |
           # Obtiene la última etiqueta (o usa un punto de referencia)
           last_tag=$(git describe --tags --abbrev=0)
@@ -41,7 +43,7 @@ jobs:
 
       - name: Commit y Push del Changelog
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT }}
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "ci.cd@teamcore.net"
