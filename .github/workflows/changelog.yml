@@ -8,33 +8,42 @@ on:
     types: [published] 
 
 jobs:
-  generate-changelog:
+  generate_changelog:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout del repositorio
-      - name: Checkout code
+      - name: Checkout del código
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Necesario para obtener el historial completo de commits
+          fetch-depth: 0 # Necesario para obtener el historial completo de Git
 
-      # Configurar git-chglog
-      - name: Set up git-chglog
+      - name: Configurar Git
         run: |
-          curl -L https://github.com/git-chglog/git-chglog/releases/download/v0.15.0/git-chglog_linux_amd64.tar.gz -o git-chglog.tar.gz
-          tar -xzf git-chglog.tar.gz
-          sudo mv git-chglog /usr/local/bin/
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "<acciones@github.com>"
 
-      # Generar el CHANGELOG
-      - name: Generate CHANGELOG
+      - name: Generar Changelog
         run: |
-          git-chglog -o CHANGELOG.md
+          # Obtiene la última etiqueta (o usa un punto de referencia)
+          last_tag=$(git describe --tags --abbrev=0)
 
-      # Subir el CHANGELOG generado al repositorio
-      - name: Commit and push CHANGELOG
+          # Obtiene los commits desde la última etiqueta hasta HEAD
+          commits=$(git log --pretty=format:"%h - %s" ${last_tag}..HEAD)
+
+          # Genera el changelog
+          echo "# Changelog" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "## Cambios desde la versión ${last_tag}" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+          if [[ -z "$commits" ]]; then
+            echo "No hay cambios desde la última versión." >> CHANGELOG.md
+          else
+            echo "$commits" >> CHANGELOG.md
+          fi
+
+      - name: Commit y Push del Changelog
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md
-          git commit -m "Update CHANGELOG"
-          git push
+          git commit -m "Actualiza CHANGELOG.md con los cambios del lanzamiento"
+          git push origin HEAD:${GITHUB_REF##*/}
