@@ -43,6 +43,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "ci.cd@teamcore.net"
           git add CHANGELOG.md
           git commit -m "Actualiza CHANGELOG.md con los cambios del lanzamiento"
           git push origin HEAD:${GITHUB_REF##*/}
