@@ -17,13 +17,9 @@ jobs:
         with:
           fetch-depth: 0 # Necesario para obtener el historial completo de Git
 
-      - name: Configurar Git
-        run: |
-            git config --global user.name "GitHub Actions Bot"
-            git config --global user.email "<acciones@github.com>"
-            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-      
       - name: Generar Changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Obtiene la última etiqueta (o usa un punto de referencia)
           last_tag=$(git describe --tags --abbrev=0)
@@ -44,6 +40,8 @@ jobs:
           fi
 
       - name: Commit y Push del Changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git add CHANGELOG.md
           git commit -m "Actualiza CHANGELOG.md con los cambios del lanzamiento"
