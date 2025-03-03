@@ -19,9 +19,10 @@ jobs:
 
       - name: Configurar Git
         run: |
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "<acciones@github.com>"
-
+            git config --global user.name "GitHub Actions Bot"
+            git config --global user.email "<acciones@github.com>"
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+      
       - name: Generar Changelog
         run: |
           # Obtiene la última etiqueta (o usa un punto de referencia)
