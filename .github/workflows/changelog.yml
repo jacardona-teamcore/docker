@@ -1,53 +1,33 @@
-name: Generate CHANGELOG
+name: Create Release
 
 on:
   push:
     tags:
-      - 'v*'  # Activa el workflow cuando se crea un tag que comienza con 'v'
-  release:
-    types: [published] 
-
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+  
 jobs:
-  generate_changelog:
+  build:
+    name: Create Release
     runs-on: ubuntu-latest
-    environment: main
-
     steps:
-      - name: Checkout del código
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 0 # Necesario para obtener el historial completo de Git
-          token: ${{ secrets.PAT }}  # Usa un PAT si el repositorio es privado
-
-      - name: Generar Changelog
+          fetch-depth: 0
+      - name: Changelog
+        uses: Bullrich/generate-release-changelog@master
+        id: Changelog
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
-        run: |
-          # Obtiene la última etiqueta (o usa un punto de referencia)
-          last_tag=$(git describe --tags --abbrev=0)
-
-          # Obtiene los commits desde la última etiqueta hasta HEAD
-          commits=$(git log --pretty=format:"%h - %s" ${last_tag}..HEAD)
-
-          # Genera el changelog
-          echo "# Changelog" > CHANGELOG.md
-          echo "" >> CHANGELOG.md
-          echo "## Cambios desde la versión ${last_tag}" >> CHANGELOG.md
-          echo "" >> CHANGELOG.md
-
-          if [[ -z "$commits" ]]; then
-            echo "No hay cambios desde la última versión." >> CHANGELOG.md
-          else
-            echo "$commits" >> CHANGELOG.md
-          fi
-
-      - name: Commit y Push del Changelog
+          REPO: ${{ github.repository }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
-        run: |
-          git config --global user.name "GitHub Actions CI/CD"
-          git config --global user.email "ci.cd@teamcore.net"
-          git add CHANGELOG.md
-          git commit -m "Actualiza CHANGELOG.md con los cambios del lanzamiento"
-          echo "HEAD:${GITHUB_REF}"
-          git push origin HEAD:${GITHUB_REF}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ${{ steps.Changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
